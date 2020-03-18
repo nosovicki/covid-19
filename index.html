@@ -9,6 +9,7 @@
 .dash { font-size:18px; font-weight:bold; color:#007bff; display:inline-block; border:solid 2px gray; padding:10px; margin: 5px; }
 .dash div { color: black; font-weight:normal; }
 .sm { opacity:0.6; }
+.btn-xs { padding: .25rem .4rem; font-size: .875rem; line-height: .5; border-radius: .2rem; }
 </style>
 <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>-->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
@@ -17,7 +18,13 @@
 <div class="container body-content">
 <h1 style=font-size:50px;text-align:center;font-weight:normal>Predicting COVID-19 <span class=sm id=date></span></h1>
 <div class="alert alert-info">
-Modelling epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">gomperts function</a>, we can fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases and predict future growth by extrapolating beyond existing data. As new data appear, prediction quality shall increase. Created on 17.03.2020, Data sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a> in real time.
+We apply mathematical model to real-time COVID statistics. Using this model, we project data into future and report 1) when function peaks 2) when it returns back to zero 3) what is the area under curve. Prediction improves every day, as new data appear.
+<p style=text-align:right;margin-bottom:0>
+  <a class="btn btn-primary btn-xs" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')"> Details </a>
+</p>
+<div class="collapse" id="collapseExample">
+We model epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">gomperts function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing is client-side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a>.
+</div>
 </div>
 <table width=100% class=auto-height><tr><td valign=top>
 <input autocomplete=off id=search onfocus="$(this).val('');$('#menu a').show()" class="form-control" placeholder=Search />
