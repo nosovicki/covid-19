@@ -43,10 +43,10 @@
     <div class="container body-content">
         <h1>COVID-19 Growth Model <span class=sm id=date></span></h1>
         <div class="alert alert-info">
-            We apply mathematical model to real-time COVID statistics. Using that model, we predict 1) total number of cases 2) when infection peaks 3) returns back to zero. Prediction improves every day, as new data appear.
+            We apply mathematical model to real-time COVID statistics. Using that model, we predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. Prediction improves every day, as new data appear.
             <p style=text-align:right;margin-bottom:0;margin-top:-20px>
                 <a class="btn btn-primary" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')">DETAILS</a> </p> <div class="collapse" id="collapseExample">
-                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">gomperts function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing is client-side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a>.
+                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing is client-side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a>.
             </div>
         </div>
         <div class="row auto-height">
