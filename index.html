@@ -22,8 +22,9 @@
             border: solid 2px gray;
             padding: 10px;
             margin: 5px;
-			border: 1px solid rgba(0,0,0,.125);
-			border-radius: .25rem;
+            border: 1px solid rgba(0,0,0,.125);
+            border-radius: .25rem;
+            min-width:320px;
         }
 
             .dash div {
@@ -39,9 +40,11 @@
 	body { font-size: 3em }
 	.tooltip { font-size:88%; } 
 	.tooltip-inner { max-width:600px; }
+	.body-content.container { max-width: 960px }
 	@media (min-width:992px) {
 		body { font-size:1em; }
 		.tooltip-inner { max-width:200px; }
+                .dash { min-width:160px; }
 	}
 	div.containter.body-content { max-width: 100%; } 
     </style>
