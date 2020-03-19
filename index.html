@@ -5,7 +5,11 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/df-number-format/2.1.6/jquery.number.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.2/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/fontawesome.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/solid.min.css" rel="stylesheet" />
     <style type=text/css>
 		h1,h2 { font-size:56px;text-align:center;font-weight:normal }
 		h2 {  font-size:50px;}
@@ -25,15 +29,21 @@
             .dash div {
                 color: black;
                 font-weight: normal;
+		font-size:80%;
             }
 
         .sm {
             opacity: 0.6;
 			white-space:nowrap
         }
-		body { font-size: 2.1em }
-		@media (max-width:  992px) { div.containter.body-content { max-width: 100% } }
-		@media (min-width: 992px) { body { font-size:1em; } }
+	body { font-size: 3em }
+	.tooltip { font-size:88%; } 
+	.tooltip-inner { max-width:600px; }
+	@media (min-width:992px) {
+		body { font-size:1em; }
+		.tooltip-inner { max-width:200px; }
+	}
+	div.containter.body-content { max-width: 100%; } 
     </style>
     <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
@@ -45,8 +55,10 @@
         <div class="alert alert-info">
             We apply mathematical model to real-time COVID statistics. Using that model, we predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. Prediction improves every day, as new data appear.
             <p style=text-align:right;margin-bottom:0;margin-top:-20px>
-                <a class="btn btn-primary" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')">DETAILS</a> </p> <div class="collapse" id="collapseExample">
-                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing is client-side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a>.
+                <button class="btn btn-info" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')">IMPLEMENTATION DETAILS
+		<i class="fas fa-chevron-down"></i>
+		</button> </p> <div class="collapse" id="collapseExample">
+                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a>. Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of this project.
             </div>
         </div>
         <div class="row auto-height">
@@ -56,38 +68,27 @@
                     <canvas class=card id="scratch" style="width: 700px; height: 350px; cursor: normal;"></canvas>
                 </div>
                 <div class="progress" style=display:none;margin:10px>
-                    <div class="progress-bar" role="progressbar" style="width: 1%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100">1%</div>
+                    <div class="progress-bar bg-info" role="progressbar" style="width: 1%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100">1%</div>
                 </div>
                 <div id=figures style=display:none class=row>
-                    <!--
-                    <div class=dash>solution<div id=solution></div></div>
-                    <div class=dash>generation<div id=generation></div></div>
-                    <div class=dash>bestfit<div id=bestfit></div></div>
-                    <div class=dash>best / pred<div id=bestfit2></div></div>
-                    <div class=dash>vertexerror<div id=vertexerror></div></div>
-                    <div class=dash>avgbestfit<div id=avgbestfit></div></div>
-                    <div class=dash>errorstdev<div id=errorstdev></div></div>
-                    <div title="" class=dash>Regression Quality<div id=quality></div></div>
-                    <div title="" class=dash>Overall<div id=overall></div></div>
-                    -->
-                    <div class="dash col">Confidence<br><span id=confidence></span></div>
-                    <div class="dash col">Peak<div id=peak></div></div>
-                    <div class="dash col">End<div id=days></div></div>
-                    <div class="dash col">Cases<br><div id=infected></div></div>
+                    <div class="dash col">Confidence<div style=text-align:right id=confidence></div></div>
+                    <div class="dash col">Cases <i title="Total number of infection cases. Shall be off by orders of magnitude for low confidence" class="fas fa-question-circle text-secondary"></i><div id=infected></div></div>
+                    <div class="dash col">Peak <i title="Moment when reported cases peak. Infection peak can precede it by many days" class="fas fa-question-circle text-secondary"></i><div id=peak></div></div>
+                    <div class="dash col">End <i title="Moment when infection risk returns back to normal" class="fas fa-question-circle text-secondary"></i><div id=days></div></div>
                 </div>
-			    See <a href="https://github.com/nosovicki/covid-19">source code</a> on GitHub
+		<hr>
             </div>
             <div class="col">
-			<h2>Country:</h2>
+			<h2>Your Country</h2>
                 <div>
-                    <input style="font-family:FontAwesome,'Open Sans',Verdana,sans-serif;font-size:inherit" autocomplete=off id=search onfocus="$(this).val('');$('#menu a').show()" class="form-control"  placeholder=" &#xf002;" />
+                    <input style="font-family:FontAwesome,'Open Sans',Verdana,sans-serif;font-size:inherit" autocomplete=off id=search onfocus="$(this).val('');$('#menu a').show()" class="form-control"  placeholder=" &#xf002;  Search for your country" />
                 </div>
                 <div class="list-group auto-height" id=menu style=max-height:800px;min-height:250px;overflow-y:auto;min-width:135px></div>
             </div>
         </div>
+	<div class=footer>
+	</div>
     </div>
-    </div>
-    <footer></footer>
     <script>
 
         var graph = new Graph(document.getElementById("scratch"), 60, 10000);
@@ -249,7 +250,7 @@
                     var regressionQuality = solution.total * observationLength / pop[0].fitness;
                     var confidence = (solution.points.current - solution.points.start) / (solution.points.peak - solution.points.start) * observationLength;
                     $('#quality').number(regressionQuality, 3);
-                    $('#confidence').html(confidence < 10 ? '<span class="badge badge-danger">very low</span>' : confidence < 100 ? '<span class="badge badge-warning">low</span>' : '<span class="badge badge-success">high</span>');
+                    $('#confidence').html(confidence < 10 ? '<span class="badge badge-danger">VERY LOW</span>' : confidence < 100 ? '<span class="badge badge-warning">LOW</span>' : '<span class="badge badge-success">HIGH</span>');
                     var overall = (regressionQuality - empiricQualityGate) * confidence;
                     if (overall < 0)
                         return graph.refuse('Regression did not converge');
@@ -257,8 +258,9 @@
                     //$('.progress').hide();
                     $('#figures').show();
                     $('.dash').show();
-                    var lineWidth = 2, strokeStyle = 'rgba(90,0,200,0.5)';
+                    var lineWidth = 3, strokeStyle = '#ffc107';
                     graph.drawFunction(graph.solutions[graph.solutions.length - 1], strokeStyle, lineWidth, genetic.formula.main);
+		    $('.dash i').tooltip();
                 }
             }
         };
@@ -577,7 +579,7 @@
         });
 
         var onResize = function () {
-            var foot = $('footer').height() + 20;
+            var foot = $('.footer').height() + 20;
             $('.auto-height').css('height', function () {
                 var off = $(this).offset();
                 if (off) {
