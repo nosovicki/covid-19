@@ -73,8 +73,8 @@
                 </div>
                 <div id=figures style=display:none class=row>
                     <div class="dash col">Confidence<div style=text-align:right id=confidence></div></div>
-                    <div class="dash col">Cases&nbsp;<i title="Projected final number of infection cases. Can be off by orders of magnitude for low confidence" class="fas fa-question-circle text-secondary"></i><div id=infected></div></div>
-                    <div class="dash col">Peak&nbsp;<i title="Moment when reported cases peak. Infection peak can precede it by many days" class="fas fa-question-circle text-secondary"></i><div id=peak></div></div>
+                    <div class="dash col">Cases&nbsp;<i title="Projected final number of infection cases" class="fas fa-question-circle text-secondary"></i><div id=infected></div></div>
+                    <div class="dash col">Peak&nbsp;<i title="Moment when new cases peak" class="fas fa-question-circle text-secondary"></i><div id=peak></div></div>
                     <div class="dash col">End&nbsp;<i title="Moment when infection risk returns back to normal" class="fas fa-question-circle text-secondary"></i><div id=days></div></div>
                 </div>
 		<hr>
@@ -251,7 +251,7 @@
                     var regressionQuality = solution.total * observationLength / pop[0].fitness;
                     var confidence = (solution.points.current - solution.points.start) / (solution.points.peak - solution.points.start) * observationLength;
                     $('#quality').number(regressionQuality, 3);
-                    $('#confidence').html(confidence < 10 ? '<span class="badge badge-danger">VERY LOW</span>' : confidence < 100 ? '<span class="badge badge-warning">LOW</span>' : '<span class="badge badge-success">HIGH</span>');
+                    $('#confidence').html(confidence < 10 ? '<span class="badge badge-danger">VERY LOW <i title="Model explains data with error. Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>' : confidence < 100 ? '<span class="badge badge-warning">LOW <i title="Model follows data well, but prediction is inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-success">HIGH <i title="Model reliably follows data. Prediction can be off only by small percentage" class="fas fa-question-circle text-white"></i></span>');
                     var overall = (regressionQuality - empiricQualityGate) * confidence;
                     if (overall < 0)
                         return graph.refuse('Regression did not converge');
