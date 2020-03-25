@@ -11,6 +11,7 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/fontawesome.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/solid.min.css" rel="stylesheet" />
     <style type=text/css>
+        .body-content { padding-top:10px; }
     @font-face {
         font-family: "FontAwesome";
         font-weight: normal;
@@ -22,35 +23,32 @@
                      url("https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.ttf?v=4.3.0") format("truetype"),
                      url("https://maxcdn.bootstrapcdn.com/font-awesome/4.3.0/fonts/fontawesome-webfont.svg?v=4.3.0#fontawesomeregular") format("svg");
         }
+        .alert {
+            word-break:break-word;
+        }
         h1, h2 {
-            font-size: 56px;
+            font-size: 45px;
             text-align: center;
             font-weight: normal;
+        }
+        #figures > div.col > span {
+            padding:5px;
+            display:block;
+            padding:2px 0;
+            margin:0 15px;
+            border-bottom: solid 1px #ccc;
         }
 
         h2 {
             font-size: 50px;
         }
-
-        .dash {
-            font-family: FontAwesome,'Open Sans',Verdana,sans-serif;
+        h5 {
             font-size: 100%;
-            font-weight: bold;
-            color: #000;
-            display: inline-block;
-            border: solid 2px gray;
-            padding: 10px;
-            margin: 5px;
-            border: 1px solid rgba(0,0,0,.125);
-            border-radius: .25rem;
-            min-width: 320px;
+            white-space:nowrap;
         }
-
-            .dash div {
-                color: black;
-                font-weight: normal;
-                font-size: 100%;
-            }
+        #figures {
+            font-size: 75%;
+        }
 
         .sm {
             opacity: 0.6;
@@ -77,10 +75,10 @@
             .tooltip-inner {
                 max-width: 200px;
             }
-
-            .dash {
-                min-width: 160px;
+            #figures {
+                font-size:90%;
             }
+
         }
     </style>
     <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>-->
@@ -89,9 +87,8 @@
 </head>
 <body>
     <div class="container body-content">
-        <h1>COVID-19 Growth Model <span class=sm id=date></span></h1>
         <div class="alert alert-info">
-        Predicting COVID-19
+        <h1>Predicting COVID-19</h1>
             <p style=text-align:right;margin-bottom:0;margin-top:-20px>
                 <button class="btn btn-info" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')">
                     MORE
@@ -99,47 +96,117 @@
                 </button>
             </p> <div class="collapse" id="collapseExample">
             <p>
-            <b>Abstract</b>
+              <b>Abstract</b>
             <p>
             <p>
             We apply mathematical model to real-time COVID statistics. Using that model, we predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. Prediction improves every day, as new data appear.
             <p>
-            <b>Implementation Details</b>
+              <b>Implementation Details</b>
             <p>
-                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://ourworldindata.org/coronavirus">ourworldindata.org</a> and <a href="https://github.com/pomber/covid19">GitHub</a>. 
-		<p>
-        Current software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
-		Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of this project.
-            </div>
+                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a>. 
+            <p>
+              Current software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
+              Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of this project.
+            <p>
+              <b>References</b>
+            <p>
+              <ol>
+                <li>WHO - "Coronavirus disease 2019 (COVID-19) situation reports". 'https://www.who.int/emergencies/diseases/novel-coronavirus-2019/situation-reports'
+                <li>Dong, Ensheng, Hongru Du, and Lauren Gardner. "An interactive web-based dashboard to track COVID-19 in real time." The Lancet Infectious Diseases (2020). Retrieved from: 'https://www.thelancet.com/journals/laninf/article/PIIS1473-3099(20)30120-1/fulltext'
+                <li>Max Roser, Hannah Ritchie and Esteban Ortiz-Ospina (2020) - "Coronavirus Disease (COVID-19) – Statistics and Research". Published online at OurWorldInData.org. Retrieved from: 'https://ourworldindata.org/coronavirus'
+              </ol>
+           </div>
         </div>
-        <div class="row auto-height">
-            <div class=col>
-                <h2>Prediction for <span id=country></span> <span style=font-size:50%;white-space:nowrap>Cases on <span style=color:red id=actual></span> <i title="Last date in the dataset" class="fas fa-question-circle" style=color:red;opacity:.4;font-size:80%></i>: <span class="badge badge-secondary" style=font-size:80%><span id=sum></span> <i title="Known cases present in the dataset" class="fas fa-question-circle"></i></span></span></h2>
+        <div class="row">
+            <div class="col" style=min-width:700px;>
+                <h2><span id=country></span> <span style=font-size:50%;white-space:nowrap><br><span style=color:red id=actual></span> <i title="Dataset actuality" class="fas fa-question-circle" style=color:red;opacity:.4;font-size:80%></i></h2>
                 <div>
                     <canvas class=card id="scratch" style="width: 700px; height: 350px; cursor: normal;"></canvas>
                 </div>
                 <div class="progress" style=display:none;margin:10px>
                     <div class="progress-bar bg-info" role="progressbar" style="width: 1%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100">1%</div>
                 </div>
-                <div id=figures style=display:none class=row>
-                    <div class="dash col">Prediction confidence<div style=text-align:right id=confidence></div></div>
-                    <div class="dash col">Confirmed yesterday&nbsp;<i title="Confirmed number of infection cases yesterday" class="fas fa-question-circle text-secondary"></i><div><span id=confirmed-yesterday></span> <span class=sm></span></div></div>
-                    <div class="dash col">Confirmed total&nbsp;<i title="Total number of confirmed cases in the dataset" class="fas fa-question-circle text-secondary"></i><div><span id=confirmed-total></span> <span class=sm></span></div></div>
-                    <div class="dash col">Expected next week&nbsp;<i title="Expected number of confirmed cases during next seven days" class="fas fa-question-circle text-secondary"></i><div><span id=infected-next-week></span> <span class=sm>(+<span id=increase-next-week></span>%)</span></div></div>
-                    <div class="dash col">Expected total&nbsp;<i title="Projected total number of infections" class="fas fa-question-circle text-secondary"></i><div><span id=infected></span> <span class=sm>(+<span id=increase></span>%)</span></div></div>
-                    <div class="dash col"><span id=peak-title></span>&nbsp;<i title="Moment when new cases peak" class="fas fa-question-circle text-secondary"></i><div id=peak></div></div>
-                    <div class="dash col"><span id=end-title></span>&nbsp;<i title="Moment when infection risk returns back to normal" class="fas fa-question-circle text-secondary"></i><div id=days></div></div>
+                <div class="row no-gutters" id=figures style=display:none>
+                <div class=col>
+                  <span class="flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Observed yesterday
+                        <i title="Confirmed number of infection cases yesterday" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                    <div id=confirmed-yesterday></div>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Observed total
+                        <i title="Total number of confirmed cases in the dataset" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                    <div id=confirmed-total></div>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Prognosed next week
+                        <i title="Expected number of confirmed cases during next seven days" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <span id=infected-next-week></span> <span class=sm>(+<span id=increase-next-week></span>%)</span>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Prognosed total
+                        <i title="Projected total number of infections" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <span id=infected></span> <span class=sm>(+<span id=increase></span>%)</span>
+                    </div>
+                  </span>
+                  </div><div class=col>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        <span id=peak-title></span>
+                        <i title="Moment when new cases peak" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <div id=peak></div>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        <span id=end-title></span>
+                        <i title="Moment when infection risk returns back to normal" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <div id=days></div>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Model Error
+                        <i title="Normalized mean prediction error" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <div id=error></div>
+                      <div id=confidence></div>
+                    </div>
+                  </span>
+                  </div>
                 </div>
                 <hr>
+                <div id=table></div>
             </div>
             <div class="col">
-                <div>
+                <div class="alert alert-info">
                     <h2 style=text-align:center>
                         Data Source
                     </h2>
                     <select class=form-control style=font-size:1em;width:100% id=source onchange="sourceData($(this).val())">
-                        <option value=oxford>University of Oxford</option>
-                        <option value=jh>Johns Hopkins University</option>
+                        <option value=jhu>JHU Daily Reports</option>
+                        <option value=who>WHO Situation Reports</option>
+                        <!--<option value=oxford>University of Oxford WHO</option>-->
                     </select>
                 </div>
                 <div>
@@ -234,7 +301,6 @@
             return Math.sqrt(sumSqErr);
         };
 
-
         genetic.generation = function (pop, generation, stats) {
         };
 
@@ -294,7 +360,7 @@
                         points: {
                             start: genetic.formula.startPoint.apply(null, res),
                             last: graph.vertices.length - 1,
-                            current: graph.vertices.length - 1 + moment().diff(moment(dates[graph.vertices.length - 1]), 'days'),
+                            current: currentPoint,
                             peak: genetic.formula.centerPoint.apply(null, res),
                             end: res[3]
                         },
@@ -307,11 +373,7 @@
                         end: zero.clone().add(solution.points.end, 'days')
                     }
                     solution.nextWeek = genetic.formula.integral(res[0], res[1], res[2], solution.points.current + 7) - known;
-                    $('#confirmed-total').number(known, 0, '.', ' ');
-                    if (dates[solution.points.current - 1])
-                        $('#confirmed-yesterday').number(graph.vertices[solution.points.current - 1][1], 0, '.', ' ');
-                    else
-                        $('#confirmed-yesterday').html('<b style=color:red>No data <i title="Recent data not present. Consider switching to another data source" class="fas fa-question-circle"></i></b>');
+                    solution.max = genetic.formula.main(res[0], res[1], res[2], solution.points.peak);
                     $('#end-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' End');
                     $('#days').html(solution.dates.end.fromNow() + ' <span class=sm>' + solution.dates.end.format('DD MMM') + '</span>');
                     $('#peak-title').text((solution.dates.peak.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Peak');
@@ -320,22 +382,21 @@
                     $('#infected').number(solution.total, 0, '.', ' ');
                     $('#infected-next-week').number(Math.max(0, solution.nextWeek), 0, '.', ' ');
                     $('#increase-next-week').number((solution.nextWeek) * 100 / known, 0, '.', ' ');
-                    var empiricQualityGate = 50;
-                    var observationLength = (solution.points.last - solution.points.start)
-                    var regressionQuality = solution.total * observationLength / pop[0].fitness;
-                    var confidence = (solution.points.last - solution.points.start) / (solution.points.peak - solution.points.start) * observationLength;
-                    $('#quality').number(regressionQuality, 3, '.', ' ');
-                    $('#confidence').html(confidence < 10 ? '<span class="badge badge-danger">VERY LOW <i title="Model explains data with error. Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>' : confidence < 100 ? '<span class="badge badge-warning">LOW <i title="Model follows data well, but prediction is inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-success">HIGH <i title="Model reliably follows data. Prediction can be off only by small percentage" class="fas fa-question-circle text-white"></i></span>');
-                    var overall = (regressionQuality - empiricQualityGate) * confidence;
-                    if (overall < 0)
+                    var empiricQualityGate = 1.103;
+                    var observationLength = (Math.min(solution.points.last, solution.points.end) - solution.points.start);
+                    var totalLength = (solution.points.end - solution.points.start);
+                    var expError = pop[0].fitness / (graph.ymax / 2) / observationLength * totalLength;
+                    solution.error = expError;
+                    if (solution.total < 0)
                         return graph.refuse('Regression did not converge');
-                    $('#overall').number(overall, 3, '.', ' ');
+                    $('#confidence').html(expError > 1.29 ? '<span class="badge badge-danger">HIGH <i title="Model fits to data poorly. Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>' : expError > 1.03 ? '<span class="badge badge-warning">AVG <i title="Prediction quality cannot be reliably assessed" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-success">NORM <i title="Model follows data well. Prediction can be inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>');
+                    $('#error').number(solution.error, 3);
                     //$('.progress').hide();
                     $('#figures').show();
-                    $('.dash').show();
                     var lineWidth = 3, strokeStyle = '#ffc107';
                     graph.drawFunction(graph.solutions[graph.solutions.length - 1], strokeStyle, lineWidth, genetic.formula.main);
                     $('.fa-question-circle').tooltip();
+                    onResize();
                 }
             }
         };
@@ -547,12 +608,43 @@
                 return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
             };
         });
+        $.expr[":"].equals = $.expr.createPseudo(function (arg) {
+            return function (elem) {
+                return $(elem).text().toUpperCase() == arg.toUpperCase();
+            };
+        });
+        var translate = { US: 'United States of America', 'Korea, South': 'South Korea', 'Republic of Korea': 'South Korea', 'Bahamas, The': 'Bahamas', 'Gambia, The': 'Gambia', 'Congo (Brazzaville)': 'Congo', 'Congo (Kinshasa)': 'Democratic Republic of Congo', 'Confirmed, China': 'China', 'Confirmed, Globally': 'World', 'Confirmed, Outside of China': 'Outside of China', 'Hubei , China': 'Hubei, China', 'Russia': 'Russian Federation' };
         search = function (ev) {
             var str = $(ev.target).val();
             if (str.length < 2) $('#menu a').show();
             $('#menu a').hide();
             $('#menu a:contains(' + str + ')').show();
         }
+        var processCsvWHO = function (csv) {
+            window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
+            var titles = data.shift();
+            window.cases = {};
+            window.dates = titles.splice(3).map(function(s) { return moment(s, 'M/D/YYYY').format('YYYY-MM-DD'); });
+            data.map(function (ls, i) {
+                var last = 0;
+                var title = (ls[0] ? (ls[0] + ', ') : '') + ls[1];
+                if (ls[0] != 'Deaths')
+                    cases[translate[title] || title] = ls.splice(3).map(function(x) { x = Math.max(parseInt(x) || last, last); var n = x - last; last = x; return n;});
+            });
+            window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
+        };
+        var processCsvJHU = function (csv) {
+            window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
+            var titles = data.shift();
+            window.cases = { World:[] };
+            window.dates = titles.splice(4).map(function(s) { return moment(s, 'M/D/YYYY').format('YYYY-MM-DD'); });
+            data.map(function (ls, i) {
+                var last = 0;
+                var title = (ls[0] ? (ls[0] + ', ') : '') + ls[1];
+                cases[translate[title] || title] = ls.splice(4).map(function(x, i) { x = Math.max(parseInt(x) || last, last); var n = x - last; last = x; cases.World[i] = (cases.World[i]||0) + n; return n;});
+            });
+            window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
+        };
         var processCsv = function (csv) {
             window.data = csv.split('\n').map(function (s) { return s.split(','); });
             var titles = data.shift();
@@ -576,7 +668,6 @@
             window.cases = { World: [] };
             dates = [];
             var start = true;
-            var translate = { US: 'United States', 'Korea, South': 'South Korea', 'Bahamas, The': 'Bahamas', 'Gambia, The': 'Gambia', 'Congo (Brazzaville)': 'Congo', 'Congo (Kinshasa)': 'Democratic Republic of Congo' };
             Object.keys(res).sort().forEach(function(k) {
                 var k2 = translate[k] || k;
                 cases[k2] = [];
@@ -596,6 +687,7 @@
                 start = false;
             });
         }
+
         var adjust = function (k, d) {
             var k2 = k + ' Adjusted';
             // approximate realistic figure for day d
@@ -616,20 +708,50 @@
             cases[k] = cases[k2];
             delete cases[k2];
         }
+        var spread = function (k, d) {
+            // take next value and previous non-zero, and draw a line between them
+            var nonZero = d;
+            while (--nonZero > 0)
+                if (cases[k][nonZero])
+                    break;
+            var n = (d - nonZero);
+            var a = cases[k][nonZero];
+            // (2 y - 2 a n)/(n^2 + n)
+            var b = (2 * cases[k][d] - 2 * a * n) / (Math.pow(n,2) + n);
+            while (++nonZero <= d)
+                cases[k][nonZero] = (a += b);
+        }
         graph.refuse = function (msg) {
             $('#sum').parent().show();
             $('#figures').show();
-            $('.progress, .dash').hide();
+            $('.result').hide();
             graph.draw();
             graph.drawVertices();
             graph.drawText(msg);
+        }
+        var median = function(ar){
+            for (var i = 0; i < ar.length; ++i){
+                var cur = ar[i];
+                var prev = ar[i-1] || cur;
+                var next = ar[i+1] || cur;
+                ar[i] = [cur[0], (prev[1] + next[1]) / 2];
+            }
         }
         var estimate = function (country) {
             $('#country').html(country);
             $('.progress').show();
             $('#figures').hide();
+            $('.result').show();
             graph.vertices = cases[country].map(function (c, i) { return [i, c]; });
+            //median(graph.vertices);
+            //median(graph.vertices);
             window.known = graph.vertices.reduce(function (a, b) { return a + b[1]; }, 0);
+            window.currentPoint = moment().diff(moment(dates[0]), 'days')
+            $('#confirmed-total').number(known, 0, '.', ' ');
+            if (dates[currentPoint - 1])
+                $('#confirmed-yesterday').number(graph.vertices[currentPoint - 1][1], 0, '.', ' ');
+            else
+                $('#confirmed-yesterday').html('<span style=color:red>No data <i title="The date is not present in the data source" class="fas fa-question-circle"></i></span>');
             var dataPoints = graph.vertices.reduce(function (a, b) { return a + (b[1] > 0); }, 0);
             $('#sum').number(known, 0, '.', ' ');
             if (known < 10 || dataPoints < 3)
@@ -658,30 +780,111 @@
         }
         $('#search').on('keyup', search);
         var initiateUI = function() {
-            $('#actual').text(dates[dates.length - 1]);
-            $('#date').text(' on ' + moment().format('MMM Do YYYY'))
+            $('#actual').text(moment(dates[dates.length - 1]).add(1,'days').fromNow());
             $('#menu').html('');
             for (k in cases) {
                 var el = $('<a class="list-group-item list-group-item-action" href=#>' + k + '</div>');
                 el.on('click', clickFn(el, k));
                 $('#menu').append(el);
             }
-            if (window.clicked && $('#menu a:contains(' + clicked + ')').length)
-                $($('#menu a:contains(' + clicked + ')')[0]).click();
+            if (window.clicked && $('#menu a:equals(' + clicked + ')').length)
+                $($('#menu a:equals(' + clicked + ')')[0]).click();
             else
-                $($('#menu a:contains(China)')[0]).click();
+                $($('#menu a:equals(World)')[0]).click();
             if ($('#search').val())
                 $('#search').keyup();
         }
         var sourceData = function(src) {
-            if (src == 'jh')
-                $.get('https://pomber.github.io/covid19/timeseries.json').then(function (json) {
-                    processJson(json);
-                    adjust('China', 22);
-                    adjust('China', 23);
+            if (src == 'who')
+                $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/who_covid_19_situation_reports/who_covid_19_sit_rep_time_series/who_covid_19_sit_rep_time_series.csv').then(function (csv) {
+                    processCsvWHO(csv);
+                    adjust('China', 27);
+                    // spread('Hubei, China', 11);
+                    // adjust('Hubei, China', 24);
+                    // spread('Guangdong, China', 11);
+                    // spread('Henan, China', 11);
+                    // spread('Zhejiang, China', 11);
+                    // spread('Hunan, China', 11);
+                    // spread('Anhui, China', 11);
+                    // spread('Jiangxi, China', 11);
+                    // spread('Shandong, China', 11);
+                    // spread('Jiangsu, China', 11);
+                    // spread('Chongqing, China', 11);
+                    // spread('Sichuan, China', 11);
+                    // spread('Heilongjiang, China', 11);
+                    // spread('Beijing, China', 11);
+                    // spread('Shanghai, China', 11);
+                    // spread('Hebei, China', 11);
+                    // spread('Fujian, China', 11);
+                    // spread('Guangxi, China', 11);
+                    // spread('Shaanxi, China', 11);
+                    // spread('Yunnan, China', 11);
+                    // spread('Hainan, China', 11);
+                    // spread('Guizhou, China', 11);
+                    // spread('Tianjin, China', 11);
+                    // spread('Shanxi, China', 11);
+                    // spread('Liaoning, China', 11);
+                    // spread('Hong Kong, China', 11);
+                    // spread('Jilin, China', 11);
+                    // spread('Gansu, China', 11);
+                    // spread('Xinjiang, China', 11);
+                    // spread('Inner Mongolia, China', 11);
+                    // spread('Ningxia, China', 11);
+                    // spread('Taiwan, China', 11);
+                    // spread('Qinghai, China', 11);
+                    // spread('Macau, China', 11);
+                    // spread('Xizang, China', 11);
+
+                    delete cases['Hubei, China'];
+                    delete cases['Guangdong, China'];
+                    delete cases['Henan, China'];
+                    delete cases['Zhejiang, China'];
+                    delete cases['Hunan, China'];
+                    delete cases['Anhui, China'];
+                    delete cases['Jiangxi, China'];
+                    delete cases['Shandong, China'];
+                    delete cases['Jiangsu, China'];
+                    delete cases['Chongqing, China'];
+                    delete cases['Sichuan, China'];
+                    delete cases['Heilongjiang, China'];
+                    delete cases['Beijing, China'];
+                    delete cases['Shanghai, China'];
+                    delete cases['Hebei, China'];
+                    delete cases['Fujian, China'];
+                    delete cases['Guangxi, China'];
+                    delete cases['Shaanxi, China'];
+                    delete cases['Yunnan, China'];
+                    delete cases['Hainan, China'];
+                    delete cases['Guizhou, China'];
+                    delete cases['Tianjin, China'];
+                    delete cases['Shanxi, China'];
+                    delete cases['Liaoning, China'];
+                    delete cases['Hong Kong, China'];
+                    delete cases['Jilin, China'];
+                    delete cases['Gansu, China'];
+                    delete cases['Xinjiang, China'];
+                    delete cases['Inner Mongolia, China'];
+                    delete cases['Ningxia, China'];
+                    //delete cases['Taiwan, China'];
+                    delete cases['Qinghai, China'];
+                    //delete cases['Macau, China'];
+                    delete cases['Xizang, China'];
+                    delete cases["Unspecified*, China"];
                     initiateUI();
                 }).fail(function () {
-                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>pomber.github.io</i></div>')[0], title: 'Network Error' });
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' });
+                });
+            else if (src == 'jhu')
+                $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv').then(function (csv) {
+                    processCsvJHU(csv);
+                    //adjust('China', 22);
+                    //adjust('China', 23);
+                    adjust('Hubei, China', 22);
+                    spread('Hubei, China', 22);
+                    adjust('Hubei, China', 23);
+                    initiateUI();
+                }).fail(function () {
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' });
                 });
             else if (src == 'oxford')
                 $.get('https://cowid.netlify.com/data/new_cases.csv').then(function (csv) {
@@ -693,7 +896,7 @@
                     swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>ourworldindata.org</i></div>')[0], title: 'Network Error' });
                 });
         }
-        sourceData('oxford');
+        sourceData('jhu');
         var onResize = function () {
             var foot = $('.footer').height() + 20;
             $('.auto-height').css('height', function () {
