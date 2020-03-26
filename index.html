@@ -131,19 +131,28 @@
                   <span class="flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1">
-                        Observed yesterday
-                        <i title="Confirmed number of infection cases yesterday" class="fas fa-question-circle text-secondary"></i>
+                        Observed cases
+                        <i title="Total number of confirmed cases in the dataset" class="fas fa-question-circle text-secondary"></i>
                       </h5>
-                    <div id=confirmed-yesterday></div>
+                    <div id=confirmed-total></div>
                     </div>
                   </span>
                   <span class="flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1">
-                        Observed total
-                        <i title="Total number of confirmed cases in the dataset" class="fas fa-question-circle text-secondary"></i>
+                        Observed yesterday
+                        <i title="Confirmed number of infection cases yesterday" class="fas fa-question-circle text-secondary"></i>
                       </h5>
-                    <div id=confirmed-total></div>
+                      <div id=confirmed-yesterday></div>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Expected today
+                        <i title="Expected number of confirmed cases today" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                    <div id=today></div> <span class=sm>(<i id=sign></i><span id=today-increase></span>%)
                     </div>
                   </span>
                   <span class="flex-column align-items-start result">
@@ -158,13 +167,22 @@
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1">
-                        Prognosed total
-                        <i title="Projected total number of infections" class="fas fa-question-circle text-secondary"></i>
+                        Prognosed next month
+                        <i title="Projected number of confirmed cases during next 30 days" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <span id=infected></span> <span class=sm>(+<span id=increase></span>%)</span>
                     </div>
                   </span>
                   </div><div class=col>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Observed Start
+                        <i title="Moment when exponential growth started" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <div id=start></div>
+                    </div>
+                  </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1">
@@ -183,13 +201,34 @@
                       <div id=days></div>
                     </div>
                   </span>
+                  <!--
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1">
-                        Model Error
-                        <i title="Normalized mean prediction error" class="fas fa-question-circle text-secondary"></i>
+                        Correlation
+                        <i title="Relation of modelled to known figures" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <div id=correlation></div>
+                      <div id=retro></div>
+                    </div>
+                  -->
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        <span id=length-title></span>
+                        <i title="Length of current epidemic wave, days" class="fas fa-question-circle text-secondary"></i>
+                      </h5>
+                      <div id=length></div>
+                    </div>
+                  </span>
+                  <span class="flex-column align-items-start result">
+                    <div class="d-flex w-100 justify-content-between">
+                      <h5 class="mb-1">
+                        Prediction Confidence
+                        <i title="Model uncertainty based composite score" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <div id=error></div>
+                      <div id=error2></div>
                       <div id=confidence></div>
                     </div>
                   </span>
@@ -354,54 +393,83 @@
 
                 if (isFinished) {
                     var res = graph.solutions.pop();
-                    res.push(genetic.formula.endPoint.apply(null, res));
                     window.solution = {
                         variables: res,
                         points: {
                             start: genetic.formula.startPoint.apply(null, res),
-                            last: graph.vertices.length - 1,
+                            lastKnown: graph.vertices.length - 1,
                             current: currentPoint,
                             peak: genetic.formula.centerPoint.apply(null, res),
-                            end: res[3]
+                            end: genetic.formula.endPoint.apply(null, res)
                         },
-                        total: genetic.formula.integral.apply(null, res)
                     }
-                    zero = moment(dates[0]);
+                    var zero = moment(dates[0]);
                     solution.dates = {
                         start: zero.clone().add(solution.points.start, 'days'),
                         peak: zero.clone().add(solution.points.peak, 'days'),
                         end: zero.clone().add(solution.points.end, 'days')
-                    }
-                    solution.nextWeek = genetic.formula.integral(res[0], res[1], res[2], solution.points.current + 7) - known;
-                    solution.max = genetic.formula.main(res[0], res[1], res[2], solution.points.peak);
-                    $('#end-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' End');
-                    $('#days').html(solution.dates.end.fromNow() + ' <span class=sm>' + solution.dates.end.format('DD MMM') + '</span>');
-                    $('#peak-title').text((solution.dates.peak.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Peak');
-                    $('#peak').html(solution.dates.peak.fromNow() + ' <span class=sm>' + solution.dates.peak.format('DD MMM') + '</span>');
-                    $('#increase').number((solution.total - known) * 100 / known, 0, '.', ' ');
-                    $('#infected').number(solution.total, 0, '.', ' ');
-                    $('#infected-next-week').number(Math.max(0, solution.nextWeek), 0, '.', ' ');
-                    $('#increase-next-week').number((solution.nextWeek) * 100 / known, 0, '.', ' ');
-                    var empiricQualityGate = 1.103;
-                    var observationLength = (Math.min(solution.points.last, solution.points.end) - solution.points.start);
-                    var totalLength = (solution.points.end - solution.points.start);
-                    var expError = pop[0].fitness / (graph.ymax / 2) / observationLength * totalLength;
-                    solution.error = expError;
-                    if (solution.total < 0)
-                        return graph.refuse('Regression did not converge');
-                    $('#confidence').html(expError > 1.29 ? '<span class="badge badge-danger">HIGH <i title="Model fits to data poorly. Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>' : expError > 1.03 ? '<span class="badge badge-warning">AVG <i title="Prediction quality cannot be reliably assessed" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-success">NORM <i title="Model follows data well. Prediction can be inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>');
-                    $('#error').number(solution.error, 3);
-                    //$('.progress').hide();
-                    $('#figures').show();
-                    var lineWidth = 3, strokeStyle = '#ffc107';
-                    graph.drawFunction(graph.solutions[graph.solutions.length - 1], strokeStyle, lineWidth, genetic.formula.main);
-                    $('.fa-question-circle').tooltip();
-                    onResize();
+                    };
+            	    var calc = function(formula, x) { return formula(res[0], res[1], res[2], x); };
+                    solution.correlation = (calc(genetic.formula.integral, solution.points.lastKnown) - calc(genetic.formula.integral, 0)) / known;
+                    solution.max = calc(genetic.formula.main, solution.points.peak);
+            	    solution.total =  calc(genetic.formula.integral, solution.points.end);
+            	    var now = calc(genetic.formula.integral, solution.points.current);
+            	    solution.today = calc(genetic.formula.main, solution.points.current);
+                    solution.nextWeek = calc(genetic.formula.integral, solution.points.current + 7) - now;
+                    solution.nextMonth = calc(genetic.formula.integral, solution.points.current + 30) - now;
+                    var yester = graph.vertices[currentPoint-1];
+                    solution.increase = { 
+                        today: yester && yester[1] ? ((solution.today - yester[1]) / yester[1]) : 0
+                    };
+                    $('#today').number(solution.today, 0, '.', ' ');
+                    $('#today-increase').number(solution.increase.today * 100, 0, '.', ' ');
+                    $('#sign').text(solution.increase.today > 0 ? '+' : '');
+                    $('#start').html(solution.dates.start.fromNow() + ' <span class=sm>' + solution.dates.start.format('DD MMM') + '</span>');
+                    var observationLength = Math.min(solution.points.lastKnown, solution.points.end) - Math.max(0, solution.points.start);
+                    var totalLength = solution.points.end - Math.max(0, solution.points.start);
+                    var areaX = (calc(genetic.formula.integral, solution.points.lastKnown) - calc(genetic.formula.integral, 0));
+                    var areaErr = (areaX - known) / (areaX + known) * 3;
+                    var prevX = calc(genetic.formula.main, solution.points.lastKnown - 1);
+                    var prevR = graph.vertices[solution.points.lastKnown-1][1];
+                    var lastX = calc(genetic.formula.main, solution.points.lastKnown);
+                    var lastR = graph.vertices[solution.points.lastKnown][1];
+                    var diffErr = ((lastX - prevX) - (lastR - prevR)) / solution.max / 1.5;
+                    var lastErr = (lastX - lastR) / (solution.max / 10 + lastX + lastR) * 2;
+                    var uncertainty = Math.pow((totalLength-observationLength)/(totalLength+observationLength), 2) / 2;
+                    solution.error = { proportional: lastErr, integral: areaErr, diff: diffErr, uncertainty: uncertainty,
+                        sumsqerr: Math.sqrt(Math.pow(areaErr, 2) + Math.pow(lastErr, 2) + Math.pow(diffErr, 2) + Math.pow(uncertainty, 2))
+                    };
+                    cache[currentSource][clicked] = solution;
+                    displayResults(solution);
                 }
             }
         };
 
-
+        var displayResults = function (solution) {
+            var length = solution.points.end - solution.points.start;
+            $('#length-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Length, days');
+            $('#length').number(length);
+            $('#end-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' End');
+            $('#days').html(solution.dates.end.fromNow() + ' <span class=sm>' + solution.dates.end.format('DD MMM') + '</span>');
+            $('#peak-title').text((solution.dates.peak.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Peak');
+            $('#peak').html(solution.dates.peak.fromNow() + ' <span class=sm>' + solution.dates.peak.format('DD MMM') + '</span>');
+            $('#increase').number((solution.nextMonth - known) * 100 / known, 0, '.', ' ');
+            $('#infected').number(solution.nextMonth, 0, '.', ' ');
+            $('#infected-next-week').number(Math.max(0, solution.nextWeek), 0, '.', ' ');
+            $('#increase-next-week').number((solution.nextWeek) * 100 / known, 0, '.', ' ');
+            var conf = 1 - solution.error.sumsqerr;
+            if (solution.total < 0 || solution.correlation < 0.3 || solution.correlation > 3 || length < 15)
+                return graph.refuse('Regression did not converge');
+            $('#correlation').number(solution.correlation, 2);
+            $('#retro').html(solution.correlation < 0.9 || solution.correlation > 1.1 ? '<span class="badge badge-secondary">AVG <i title="Model fits to data poorly" class="fas fa-question-circle text-white"></i></span>' :'<span class="badge badge-success">EXC <i title="Model follows data well" class="fas fa-question-circle text-white"></i></span>');
+            $('#confidence').html(conf < 0.1 ? '<span class="badge badge-danger">LOW <i title="Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>' : conf < 0.9 ? '<span class="badge badge-secondary">AVG <i title="Prediction can be inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-success">EXC <i title="Prediction confidence is high" class="fas fa-question-circle text-white"></i></span>');
+            $('#error').number(conf, 2);
+            $('#figures').show();
+            var lineWidth = 3, strokeStyle = '#ffc107';
+            graph.drawFunction(solution.variables, strokeStyle, lineWidth, genetic.formula.main);
+            $('.fa-question-circle').tooltip();
+            onResize();
+        };
 
 
         function Graph(canvas, xmax, ymax) {
@@ -486,8 +554,7 @@
             var i;
 
             // x-grid
-            //for (i=0;i<=xmax;++i) {
-            for (i = 0; i <= xmax; i += Math.floor(xmax / 15)) {
+            for (i = 0; i <= xmax; i += Math.max(Math.floor(xmax / 15), 1)) {
                 var cx = i * xstride + bound[3];
                 var y = bound[2];
 
@@ -499,7 +566,6 @@
             }
 
             // y-grid
-            //for (i=0;i<=ymax;++i) {
             for (i = 0; i <= ymax; i += Math.floor(ymax / 10)) {
                 var cx = bound[3];
                 var y = bound[2] - i * ystride;
@@ -526,7 +592,7 @@
 
             // x bars
             ctx.strokeStyle = "#000";
-            for (i = 0; i <= xmax - 1; i += Math.floor(xmax / 8)) {
+            for (i = 0; i <= xmax - 1; i += Math.max(Math.floor(xmax / 8), 2)) {
                 var cx = i * xstride + bound[3];
                 var y = bound[2];
 
@@ -570,7 +636,7 @@
 
 
 
-        Graph.prototype.drawVertices = function () {
+        Graph.prototype.drawVertices = function (fill, stroke) {
 
             var ctx = this.ctx;
             ctx.save();
@@ -583,8 +649,8 @@
 
             var i;
 
-            ctx.fillStyle = "#000";
-            ctx.strokeStyle = "#fff";
+            ctx.fillStyle = fill || "#000";
+            ctx.strokeStyle = stroke || "#fff";
             ctx.lineWidth = 2;
 
             // vertices
@@ -603,6 +669,7 @@
 
     </script>
     <script type=text/javascript>
+        window.cache = {};
         $.expr[":"].contains = $.expr.createPseudo(function (arg) {
             return function (elem) {
                 return $(elem).text().toUpperCase().indexOf(arg.toUpperCase()) >= 0;
@@ -636,13 +703,22 @@
         var processCsvJHU = function (csv) {
             window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
             var titles = data.shift();
-            window.cases = { World:[] };
+            window.cases = { World:[], China:[] };
             window.dates = titles.splice(4).map(function(s) { return moment(s, 'M/D/YYYY').format('YYYY-MM-DD'); });
             data.map(function (ls, i) {
                 var last = 0;
                 var title = (ls[0] ? (ls[0] + ', ') : '') + ls[1];
-                cases[translate[title] || title] = ls.splice(4).map(function(x, i) { x = Math.max(parseInt(x) || last, last); var n = x - last; last = x; cases.World[i] = (cases.World[i]||0) + n; return n;});
+                cases[translate[title] || title] = ls.splice(4).map(function(x, i) {
+                    x = Math.max(parseInt(x) || last, last);
+                    var n = x - last;
+                    last = x;
+                    cases.World[i] = (cases.World[i]||0) + n;
+                    if (ls[1] == 'China')
+                        cases.China[i] = (cases.China[i]||0) + n;
+                    return n;
+                });
             });
+            delete cases.undefined;
             window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
         };
         var processCsv = function (csv) {
@@ -743,15 +819,15 @@
             $('#figures').hide();
             $('.result').show();
             graph.vertices = cases[country].map(function (c, i) { return [i, c]; });
-            //median(graph.vertices);
-            //median(graph.vertices);
+            if (window.timeBackClip)
+                graph.vertices.length = window.timeBackClip;
             window.known = graph.vertices.reduce(function (a, b) { return a + b[1]; }, 0);
-            window.currentPoint = moment().diff(moment(dates[0]), 'days')
+            window.currentPoint = window.timeBackClip || moment().diff(moment(dates[0]), 'days')
             $('#confirmed-total').number(known, 0, '.', ' ');
-            if (dates[currentPoint - 1])
+            if (graph.vertices[currentPoint - 1])
                 $('#confirmed-yesterday').number(graph.vertices[currentPoint - 1][1], 0, '.', ' ');
             else
-                $('#confirmed-yesterday').html('<span style=color:red>No data <i title="The date is not present in the data source" class="fas fa-question-circle"></i></span>');
+                $('#confirmed-yesterday').html('<span class="badge badge-danger">NONE <i title="Not present in the data source" class="fas fa-question-circle text-white"></i></span>');
             var dataPoints = graph.vertices.reduce(function (a, b) { return a + (b[1] > 0); }, 0);
             $('#sum').number(known, 0, '.', ' ');
             if (known < 10 || dataPoints < 3)
@@ -764,11 +840,18 @@
             graph.ymax = Math.max(10, ymax);
             graph.draw();
             graph.drawText(country);
-            graph.drawVertices();
-            var config = { iterations: 500, size: 250, crossover: 0.4, mutation: 1.0, skip: 10 };
-            var userData = { terms: 3, vertices: graph.vertices };
-            $('h1')[0].scrollIntoView();
-            genetic.evolve(config, userData);
+            //graph.drawVertices('#abc');
+            //median(graph.vertices);
+            //median(graph.vertices);
+            graph.drawVertices('#000');
+            if (cache[currentSource][clicked])
+                displayResults(cache[currentSource][clicked]);
+            else {
+                var config = { iterations: 500, size: 250, crossover: 0.4, mutation: 1.0, skip: 10 };
+                var userData = { terms: 3, vertices: graph.vertices };
+                $('h1')[0].scrollIntoView();
+                genetic.evolve(config, userData);
+            }
         }
         var clickFn = function (el, k) {
             return function () {
@@ -780,10 +863,10 @@
         }
         $('#search').on('keyup', search);
         var initiateUI = function() {
-            $('#actual').text(moment(dates[dates.length - 1]).add(1,'days').fromNow());
+            $('#actual').text(moment(dates[window.timeBackClip || (dates.length - 1)]).add(1,'days').fromNow());
             $('#menu').html('');
             for (k in cases) {
-                var el = $('<a class="list-group-item list-group-item-action" href=#>' + k + '</div>');
+                var el = $('<a class="list-group-item list-group-item-action" href=#' + (window.timeBackClip || '') + ';' + currentSource + ';' + k.replace(/ /g, '+') + '>' + k + '</div>');
                 el.on('click', clickFn(el, k));
                 $('#menu').append(el);
             }
@@ -795,46 +878,14 @@
                 $('#search').keyup();
         }
         var sourceData = function(src) {
+            window.cache[src] = {};
+            window.currentSource = src;
+            $('#source').val(src);
             if (src == 'who')
                 $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/who_covid_19_situation_reports/who_covid_19_sit_rep_time_series/who_covid_19_sit_rep_time_series.csv').then(function (csv) {
                     processCsvWHO(csv);
                     adjust('China', 27);
-                    // spread('Hubei, China', 11);
-                    // adjust('Hubei, China', 24);
-                    // spread('Guangdong, China', 11);
-                    // spread('Henan, China', 11);
-                    // spread('Zhejiang, China', 11);
-                    // spread('Hunan, China', 11);
-                    // spread('Anhui, China', 11);
-                    // spread('Jiangxi, China', 11);
-                    // spread('Shandong, China', 11);
-                    // spread('Jiangsu, China', 11);
-                    // spread('Chongqing, China', 11);
-                    // spread('Sichuan, China', 11);
-                    // spread('Heilongjiang, China', 11);
-                    // spread('Beijing, China', 11);
-                    // spread('Shanghai, China', 11);
-                    // spread('Hebei, China', 11);
-                    // spread('Fujian, China', 11);
-                    // spread('Guangxi, China', 11);
-                    // spread('Shaanxi, China', 11);
-                    // spread('Yunnan, China', 11);
-                    // spread('Hainan, China', 11);
-                    // spread('Guizhou, China', 11);
-                    // spread('Tianjin, China', 11);
-                    // spread('Shanxi, China', 11);
-                    // spread('Liaoning, China', 11);
-                    // spread('Hong Kong, China', 11);
-                    // spread('Jilin, China', 11);
-                    // spread('Gansu, China', 11);
-                    // spread('Xinjiang, China', 11);
-                    // spread('Inner Mongolia, China', 11);
-                    // spread('Ningxia, China', 11);
-                    // spread('Taiwan, China', 11);
-                    // spread('Qinghai, China', 11);
-                    // spread('Macau, China', 11);
-                    // spread('Xizang, China', 11);
-
+                    adjust('World', 27);
                     delete cases['Hubei, China'];
                     delete cases['Guangdong, China'];
                     delete cases['Henan, China'];
@@ -877,11 +928,13 @@
             else if (src == 'jhu')
                 $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv').then(function (csv) {
                     processCsvJHU(csv);
-                    //adjust('China', 22);
-                    //adjust('China', 23);
+                    adjust('China', 22);
+                    adjust('China', 24);
                     adjust('Hubei, China', 22);
                     spread('Hubei, China', 22);
                     adjust('Hubei, China', 23);
+                    adjust('World', 22);
+                    adjust('World', 23);
                     initiateUI();
                 }).fail(function () {
                     swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' });
@@ -896,7 +949,6 @@
                     swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>ourworldindata.org</i></div>')[0], title: 'Network Error' });
                 });
         }
-        sourceData('jhu');
         var onResize = function () {
             var foot = $('.footer').height() + 20;
             $('.auto-height').css('height', function () {
@@ -909,6 +961,19 @@
         }
         onResize();
         $(window).resize(onResize);
+        var onHashChange = function() {
+            window.appConf = location.hash.substr(1).split(';');
+            window.clicked = appConf[2] && appConf[2].replace(/\+/g, ' ');
+            var oldClip = window.timeBackClip;
+            window.timeBackClip = parseInt(appConf[0]);
+            if (!window.currentSource || window.currentSource != appConf[1])
+                sourceData(appConf[1] || 'jhu');
+            // true only when manually change timebackclip
+            else if (window.timeBackClip && oldClip != window.timeBackClip && window.clicked)
+                estimate(window.clicked);
+        }
+        window.addEventListener('hashchange', onHashChange);
+        onHashChange();
     </script>
 </body>
 </html>
