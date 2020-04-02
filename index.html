@@ -3,13 +3,23 @@
     <title>Predicting COVID-19</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/df-number-format/2.1.6/jquery.number.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-loading-overlay/2.1.7/loadingoverlay.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/numeral.js/2.0.6/numeral.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.2/umd/popper.min.js"></script>
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
     <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/fontawesome.min.css" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/solid.min.css" rel="stylesheet" />
     <style type=text/css>
+    .navbar-brand {
+        font-size: 0.9em;
+        white-space:inherit;
+    }
+    .ctry {
+        background: whitesmoke;
+        padding-top: 15px;
+        border-top: solid 6px #dcdcdc;
+    }
         .body-content { padding-top:10px; }
     @font-face {
         font-family: "FontAwesome";
@@ -25,25 +35,32 @@
         .alert {
             word-break:break-word;
         }
-        h1, h2 {
-            font-size: 45px;
+        .img-well {
+            border: 1px solid #c8ccd1;
+            padding: 3px;
+            background-color: #f8f9fa;
+            font-size: 94%;
+            text-align: center;
+            overflow: hidden;
+        }
+        h1, h3 {
             text-align: center;
             font-weight: normal;
         }
+        h5 i { margin-top: 0.2em; }
         #figures > div.col > span {
             padding:5px;
             display:block;
             padding:2px 0;
             margin:0 15px;
-            border-bottom: solid 1px #ccc;
         }
 
-        h2 {
-            font-size: 50px;
-        }
+        h3 { font-size:34px; }
         h5 {
             font-size: 100%;
             white-space:nowrap;
+            width: 53%;
+            font-weight:normal;
         }
         #figures {
             font-size: 75%;
@@ -66,11 +83,16 @@
             max-width: 600px;
         }
 
-        canvas.card {
+        canvas {
             margin-left: auto;
             margin-right: auto;
-            width:250px!important;
-            height:auto!important;
+            display:none;
+            cursor: normal;
+            margin-top:-10px;
+        }
+        canvas.show {
+            display:block;
+            cursor: pointer;
         }
 
 	    @media (min-width: 768px) {
@@ -79,11 +101,11 @@
             }
         }
         @media (min-width:992px) {
-            canvas.card {
-                display:block;
-                width: 700px!important;
-                height: 350px!important;
+            .navbar-brand {
+                font-size: 1.25em;
             }
+            canvas { display:block; }
+            .handle { display:none; }
             body {
                 font-size: 1em;
             }
@@ -97,8 +119,9 @@
             .container {
                 max-width: 960px;
             }
-
         }
+
+        @media (min-width: 1200px) {.container { max-width: 1140px; } }
     </style>
     <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
@@ -106,7 +129,7 @@
 </head>
 <body>
     <div class="container body-content">
-        <div class="alert alert-info">
+        <div class="jumbotron" style="margin-bottom:0;padding:20px 30px 5px 30px">
         <h1>Predicting COVID-19</h1>
             <p style=text-align:right;margin-bottom:0;margin-top:-20px>
                 <button class="btn btn-info" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')">
@@ -136,39 +159,52 @@
               </ol>
            </div>
         </div>
+        <nav class="navbar navbar-expand-sm bg-dark navbar-dark justify-content-between" style=margin-bottom:10px>
+  <a class="navbar-brand"><span id=country></span> <span style=font-size:80% class=sm><span class=actual></span> <i title="Dataset actuality" class="fas fa-question-circle"></i></small></a>
+                <ul class="nav nav-pills nav-fill" id=source>
+  <li class="nav-item">
+    <a class="nav-link active jhu" href=# onclick="sourceData('jhu');return false">JHU <i title="Use Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link who" href=# onclick="sourceData('who');return false">WHO <i title="Use WHO Situational Reports (updated twice a week)" class="fas fa-question-circle"></i></a>
+  </li>
+</ul>
+</nav>
         <div class="row">
-            <div class="col" style=min-width:700px;>
-                <h2><span id=country></span> <span style=font-size:50%;white-space:nowrap><br><span style=color:red id=actual></span> <i title="Dataset actuality" class="fas fa-question-circle" style=color:red;opacity:.4;font-size:80%></i></h2>
-                <div>
-                    <canvas class=card id="scratch" style="width: 700px; height: 350px; cursor: normal;"></canvas>
+            <div class="col" style=min-width:742px;>
+                <div style=text-align:center>
+                    <canvas onclick="$(this).removeClass('show');$('.handle').show()" id="scratch" style="width: 700px; height: 350px;background:#fff"></canvas>
+                    <button class="btn btn-info handle" onclick="$('canvas').addClass('show');$(this).hide();">DISPLAY GRAPHIC</button>
                 </div>
                 <div class="progress" style=display:none;margin:10px>
                     <div class="progress-bar bg-info" role="progressbar" style="width: 1%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100">1%</div>
                 </div>
                 <div class="row no-gutters" id=figures style=display:none>
-                <div class=col>
+                <div class="col">
                   <span class="flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         Observed cases
                         <i title="Total number of confirmed cases in the dataset" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                     <div id=confirmed-total></div>
+                    <span class="sm actual"></span>
                     </div>
                   </span>
                   <span class="flex-column align-items-start">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         Observed yesterday
                         <i title="Confirmed number of infection cases yesterday" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <div id=confirmed-yesterday></div>
+                      <span class=sm id=date-yesterday></span>
                     </div>
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
-                        Expected today
+                      <h5 class="mb-1 d-flex justify-content-between">
+                        Prognosed today
                         <i title="Expected range of confirmed cases today, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <div id=fr-today></div>-<div id=to-today></div> <span class=sm>(<i id=sign></i><span id=today-increase></span>%)
@@ -176,35 +212,35 @@
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         + Next week
-                        <i title="Expected range of confirmed cases during next seven days, 95% confidence" class="fas fa-question-circle text-secondary"></i>
+                        <i title="Expected range of new confirmed cases during next seven days, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                        <span id=fr-next-week></span>-<span id=to-next-week></span> <span class=sm>(x<span id=increase-next-week></span>)</span>
                     </div>
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         + Next month
-                        <i title="Expected range of confirmed cases during next 30 days, 95% confidence" class="fas fa-question-circle text-secondary"></i>
+                        <i title="Expected range of new confirmed cases during next 30 days, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                        <span id=fr-next-month></span>-<span id=to-next-month></span> <span class=sm>(x<span id=increase-next-month></span>)</span>
                     </div>
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
 			Total
                         <i title="Projected total number of confirmed cases, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <span id=fr-total></span>-<span id=to-total></span> <span class=sm>(x<span id=increase></span>)</span>
                     </div>
                   </span>
-                  </div><div class=col>
+                  </div><div class="col" style=min-width:50%>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         Observed Start
                         <i title="Moment when exponential growth started" class="fas fa-question-circle text-secondary"></i>
                       </h5>
@@ -213,7 +249,7 @@
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         <span id=peak-title></span>
                         <i title="Moment when new cases peak" class="fas fa-question-circle text-secondary"></i>
                       </h5>
@@ -222,7 +258,7 @@
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         <span id=end-title></span>
                         <i title="Moment when infection risk returns back to normal" class="fas fa-question-circle text-secondary"></i>
                       </h5>
@@ -232,7 +268,7 @@
                   <!--
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         Correlation
                         <i title="Relation of modelled to known figures" class="fas fa-question-circle text-secondary"></i>
                       </h5>
@@ -242,7 +278,7 @@
                   -->
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         <span id=length-title></span>
                         <i title="Length of current epidemic wave, days" class="fas fa-question-circle text-secondary"></i>
                       </h5>
@@ -251,9 +287,9 @@
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
+                      <h5 class="mb-1 d-flex justify-content-between">
                         Model error
-                        <i title="Magnitude of an error vector" class="fas fa-question-circle text-secondary"></i>
+                        <i title="Magnitude of model error vector" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <div id=model-error></div>
                       <div id=model-error-rank></div>
@@ -261,34 +297,23 @@
                   </span>
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
-                      <h5 class="mb-1">
-                        Confidence
-                        <i title="Relative standard deviation value of predicted probability distribution" class="fas fa-question-circle text-secondary"></i>
+                      <h5 class="mb-1 d-flex justify-content-between">
+                        Uncertainty
+                        <i title="Relative standard deviation value of prediction" class="fas fa-question-circle text-secondary"></i>
                       </h5>
-                      &#x00B1;<div id=sigma></div>%
+                      <div id=sigma></div>
                       <div id=sigma-rank></div>
                     </div>
                   </span>
                   </div>
                 </div>
-                <hr>
                 <!--
                 <button class="btn btn-link" id=sample style=display:none onclick="sampleEstimation();return false">Prediction Retrospection</button>
                 <button class="btn btn-link" onclick="sampleAll();return false">Sample all</button>
                 -->
             </div>
             <div class="col">
-                <div class="alert alert-info">
-                    <h2 style=text-align:center>
-                        Data Source
-                    </h2>
-                    <select class=form-control style=font-size:1em;width:100% id=source onchange="sourceData($(this).val())">
-                        <option value=jhu>JHU Daily Reports</option>
-                        <option value=who>WHO Situation Reports</option>
-                        <!--<option value=oxford>University of Oxford WHO</option>-->
-                    </select>
-                </div>
-                <div>
+                <div style="padding-bottom:5px;">
                     <input style="font-family:FontAwesome,'Open Sans',Verdana,sans-serif;font-size:inherit" autocomplete=off id=search onfocus="$(this).val('');$('#menu a').show()" class="form-control" placeholder=" &#xf002; Search for your country" />
                 </div>
                 <div class="list-group auto-height" id=menu style=max-height:800px;min-height:250px;overflow-y:auto;min-width:135px></div>
@@ -298,7 +323,7 @@
         </div>
     </div>
     <script>
-
+$.LoadingOverlaySetup({imageColor              : '#ccc'});
         var graph = new Graph(document.getElementById("scratch"), 60, 10000);
 
         var genetic = Genetic.create();
@@ -484,33 +509,33 @@
 
         var displayResults = function (solution) {
             var length = solution.points.end - solution.points.start;
-            $('#length-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Length, days');
-            $('#length').number(length);
+            $('#length-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Length');
+            $('#length').html(numeral(length).format('0') + ' days');
             $('#sign').text(solution.increase.today > 0 ? '+' : '');
             $('#start').html(solution.dates.start.fromNow() + ' <span class=sm>' + solution.dates.start.format('DD MMM') + '</span>');
             $('#end-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' End');
             $('#days').html(solution.dates.end.fromNow() + ' <span class=sm>' + solution.dates.end.format('DD MMM') + '</span>');
             $('#peak-title').text((solution.dates.peak.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Peak');
             $('#peak').html(solution.dates.peak.fromNow() + ' <span class=sm>' + solution.dates.peak.format('DD MMM') + '</span>');
-            $('#fr-today').number(solution.today / solution.error.range, 0, '.', ' ');
-            $('#to-today').number(solution.today * solution.error.range, 0, '.', ' ');
-            $('#today-increase').number(solution.increase.today * 100, 0, '.', ' ');
-            $('#fr-next-week').number(Math.max(0, solution.nextWeek / solution.error.range), 0, '.', ' ');
-            $('#to-next-week').number(Math.max(0, solution.nextWeek * solution.error.range), 0, '.', ' ');
-            $('#increase-next-week').number((solution.nextWeek) / known, 0, '.', ' ');
-            $('#fr-next-month').number(solution.nextMonth / solution.error.range, 0, '.', ' ');
-            $('#to-next-month').number(solution.nextMonth * solution.error.range, 0, '.', ' ');
-            $('#increase-next-month').number(solution.nextMonth / known, 0, '.', ' ');
-            $('#fr-total').number(Math.max(known + solution.nextMonth / solution.error.range, solution.total / solution.error.range), 0, '.', ' ');
-            $('#to-total').number(Math.max(known + solution.nextMonth * solution.error.range, solution.total * solution.error.range), 0, '.', ' ');
-            $('#increase').number(solution.total / known, 0, '.', ' ');
+            $('#fr-today').number(solution.today / solution.error.range);
+            $('#to-today').number(solution.today * solution.error.range);
+            $('#today-increase').number(solution.increase.today * 100);
+            $('#fr-next-week').number(Math.max(0, solution.nextWeek / solution.error.range));
+            $('#to-next-week').number(Math.max(0, solution.nextWeek * solution.error.range));
+            $('#increase-next-week').number((solution.nextWeek) / known);
+            $('#fr-next-month').number(solution.nextMonth / solution.error.range);
+            $('#to-next-month').number(solution.nextMonth * solution.error.range);
+            $('#increase-next-month').number(solution.nextMonth / known);
+            $('#fr-total').number(Math.max(known + solution.nextMonth / solution.error.range, solution.total / solution.error.range));
+            $('#to-total').number(Math.max(known + solution.nextMonth * solution.error.range, solution.total * solution.error.range));
+            $('#increase').number(solution.total / known);
             if (solution.total < 0 || solution.correlation < 0.3 || solution.correlation > 3 || length < 15)
                 return graph.refuse('Regression did not converge');
-            $('#correlation').number(solution.correlation, 2);
-            $('#model-error').number(solution.error.model, 2);
+            $('#correlation').number(solution.correlation);
+            $('#model-error').number(solution.error.model, '0.0');
             $('#model-error-rank').html(solution.error.model > 1 ? '<span class="badge badge-danger">HIGH <i title="Model does not fit to data well" class="fas fa-question-circle text-white"></i></span>' : solution.error.model > 0.2 ? '<span class="badge badge-secondary">AVG <i title="Model does not fit to data perfectly" class="fas fa-question-circle text-white"></i></span>' :'<span class="badge badge-success">LOW <i title="Model fits to data very well" class="fas fa-question-circle text-white"></i></span>');
-            $('#sigma').number(solution.error.sigma * 100);
-            $('#sigma-rank').html(solution.error.sigma <= 0.2 ? '<span class="badge badge-success">HIGH <i title="Prediction has high confidence" class="fas fa-question-circle text-white"></i></span>' : solution.error.sigma < 2.5 ? '<span class="badge badge-success">NORMAL <i title="Prediction is inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-danger">LOW <i title="Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>');
+            $('#sigma').number(solution.error.sigma, '0.0');
+            $('#sigma-rank').html(solution.error.sigma <= 0.2 ? '<span class="badge badge-success">LOW <i title="Prediction has high confidence" class="fas fa-question-circle text-white"></i></span>' : solution.error.sigma < 2.5 ? '<span class="badge badge-success">AVG <i title="Prediction is inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-danger">HIGH <i title="Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>');
             $('#figures').show();
             var lineWidth = 3, strokeStyle = '#ffc107';
             graph.drawFunction(solution.variables, strokeStyle, lineWidth, genetic.formula.main);
@@ -729,6 +754,11 @@
                 return $(elem).text().toUpperCase() == arg.toUpperCase();
             };
         });
+        $.fn.number = function (n, fmt) {
+            fmt = fmt || '0,0 a';
+            if (this.length)
+                this.html(numeral(n).format(fmt));
+        }
         var translate = { US: 'United States of America', 'Korea, South': 'South Korea', 'Republic of Korea': 'South Korea', 'Bahamas, The': 'Bahamas', 'Gambia, The': 'Gambia', 'Congo (Brazzaville)': 'Congo', 'Congo (Kinshasa)': 'Democratic Republic of Congo', 'Confirmed, China': 'China', 'Confirmed, Globally': 'World', 'Confirmed, Outside of China': 'Outside of China', 'Hubei , China': 'Hubei, China', 'Russia': 'Russian Federation' };
         search = function (ev) {
             var str = $(ev.target).val();
@@ -850,8 +880,13 @@
             while (++nonZero <= d)
                 cases[k][nonZero] = (a += b);
         }
+        graph.candy = function () {
+            graph.vertices = [[graph.xmax * Math.random(),graph.ymax * Math.random()]];
+            graph.drawVertices('rgb(' + [1,2,3].map(function(){return Math.random() * 255;}) +')'); 
+        }
         graph.refuse = function (msg) {
-            delete cache[currentSource][clicked][timeBackClip];
+            if (cache[currentSource][clicked])
+                delete cache[currentSource][clicked][timeBackClip];
             $('#sum').parent().show();
             $('#figures').show();
             $('.result').hide();
@@ -880,13 +915,14 @@
                 graph.vertices.length = window.timeBackClip;
             window.known = graph.vertices.reduce(function (a, b) { return a + b[1]; }, 0);
             window.currentPoint = window.timeBackClip || moment().diff(moment(dates[0]), 'days')
-            $('#confirmed-total').number(known, 0, '.', ' ');
-            if (graph.vertices[currentPoint - 1])
-                $('#confirmed-yesterday').number(graph.vertices[currentPoint - 1][1], 0, '.', ' ');
-            else
+            $('#confirmed-total').number(known);
+            if (graph.vertices[currentPoint - 1]) {
+                $('#confirmed-yesterday').number(graph.vertices[currentPoint - 1][1]);
+                $('#date-yesterday').html('(' + moment(dates[currentPoint - 1]).format('DD MMM') + ')');
+            } else
                 $('#confirmed-yesterday').html('<span class="badge badge-danger">NONE <i title="Not present in the data source" class="fas fa-question-circle text-white"></i></span>');
             var dataPoints = graph.vertices.reduce(function (a, b) { return a + (b[1] > 0); }, 0);
-            $('#sum').number(known, 0, '.', ' ');
+            $('#sum').number(known);
             if (known < 10 || dataPoints < 3)
                 return graph.refuse('Insufficient number of observations');
             var ymax = graph.vertices.reduce(function (a, b) { return Math.max(a, b[1]); }, 0) * 2
@@ -921,7 +957,10 @@
         }
         $('#search').on('keyup', search);
         var initiateUI = function() {
-            $('#actual').text(moment(dates[window.timeBackClip || (dates.length - 1)]).add(1,'days').fromNow());
+            $('#source .nav-link.active').removeClass('active');
+            $('#source .nav-link.' + currentSource).addClass('active');
+            $('.container').LoadingOverlay('hide');
+            $('.actual').text('(' + moment(dates[window.timeBackClip || (dates.length - 1)]).add(1,'days').fromNow() + ')');
             $('#menu').html('');
             for (k in cases) {
                 var el = $('<a class="list-group-item list-group-item-action" href=#' + (window.timeBackClip || '') + ';' + currentSource + ';' + k.replace(/ /g, '+') + '>' + k + '</div>');
@@ -938,7 +977,12 @@
         var sourceData = function(src) {
             window.cache[src] = {};
             window.currentSource = src;
-            $('#source').val(src);
+            $('.container').LoadingOverlay('show');
+            var error = function(){
+                graph.draw();
+                graph.refuse('Network error');
+                window.setInterval(graph.candy, 30);
+            }
             if (src == 'who')
                 $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/who_covid_19_situation_reports/who_covid_19_sit_rep_time_series/who_covid_19_sit_rep_time_series.csv').then(function (csv) {
                     processCsvWHO(csv);
@@ -981,7 +1025,9 @@
                     delete cases["Unspecified*, China"];
                     initiateUI();
                 }).fail(function () {
-                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' });
+                    $('.container').LoadingOverlay('hide');
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' })
+                    .then(error);
                 });
             else if (src == 'jhu')
                 $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv').then(function (csv) {
@@ -995,7 +1041,10 @@
                     adjust('World', 23);
                     initiateUI();
                 }).fail(function () {
-                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' });
+                    graph.refuse('Network error');
+                    $('.container').LoadingOverlay('hide');
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' })
+                    .then(error);
                 });
             else if (src == 'oxford')
                 $.get('https://cowid.netlify.com/data/new_cases.csv').then(function (csv) {
