@@ -15,6 +15,8 @@
         font-size: 0.9em;
         white-space:inherit;
     }
+    .nav-link {font-size:0.6em;}
+    .btn { font-size: 0.6em; }
     .ctry {
         background: whitesmoke;
         padding-top: 15px;
@@ -101,6 +103,8 @@
             }
         }
         @media (min-width:992px) {
+            .nav-link {font-size:1em;}
+            .btn { font-size: 1em; }
             .navbar-brand {
                 font-size: 1.25em;
             }
@@ -136,16 +140,17 @@
                     MORE
                     <i class="fas fa-chevron-down"></i>
                 </button>
-            </p> <div class="collapse" id="collapseExample">
+            </p> <div class="collapse" id="more">
             <p>
               <b>Abstract</b>
             <p>
-            <p>
-            We apply mathematical model to real-time COVID statistics. Using that model, we predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. Prediction improves every day, as new data appear.
+            This program explores predictive properties of <span style=font-size:150%;font-family:seriff>e<sup>-e<sup>-t</sup></sup></span> type of functions. Though we expect it to have some utility value, its predictions were not independently reviewed.
+            <p>With that in mind, we apply our <a href="https://www.geogebra.org/graphing/svpu7zdd">model</a> to real-time COVID statistics. Using that model, we try to predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. 
+            <p>To assess prediction accuracy, program offers retrospective analysis against later observed values.
             <p>
               <b>Implementation Details</b>
             <p>
-                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a>. 
+                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. All data is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a>. 
             <p>
               Current software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
               Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of this project.
@@ -161,6 +166,27 @@
         </div>
         <nav class="navbar navbar-expand-sm bg-dark navbar-dark justify-content-between" style=margin-bottom:10px>
   <a class="navbar-brand"><span id=country></span> <span style=font-size:80% class=sm><span class=actual></span> <i title="Dataset actuality" class="fas fa-question-circle"></i></small></a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#collapsibleNavbar">
+    <span class="navbar-toggler-icon"></span>
+  </button>
+  <div class="collapse navbar-collapse" id="collapsibleNavbar">
+    <ul class="navbar-nav">
+    <!--
+      <li class="nav-item">
+        <a class="nav-link active" href="index.html">Forecast</a>
+      </li>
+      -->
+      <li class="nav-item" id=sample style=display:none>
+        <a class="btn btn-danger nav-link" href="#" onclick="analyse();return false">ANALYSE</a>
+      </li>
+                <!--
+      <li class="nav-item">
+        <a class="nav-link" href="results.html">Results</a>
+      </li>
+                <button class="btn btn-link" onclick="sampleAll();return false">Sample all</button>
+                -->
+  </div>
+    </ul>
                 <ul class="nav nav-pills nav-fill" id=source>
   <li class="nav-item">
     <a class="nav-link active jhu" href=# onclick="sourceData('jhu');return false">JHU <i title="Use Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
@@ -228,7 +254,7 @@
                        <span id=fr-next-month></span>-<span id=to-next-month></span> <span class=sm>(x<span id=increase-next-month></span>)</span>
                     </div>
                   </span>
-                  <span class="flex-column align-items-start result">
+                  <span class="flex-column align-items-start result font-weight-bold">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1 d-flex justify-content-between">
 			Total
@@ -307,10 +333,6 @@
                   </span>
                   </div>
                 </div>
-                <!--
-                <button class="btn btn-link" id=sample style=display:none onclick="sampleEstimation();return false">Prediction Retrospection</button>
-                <button class="btn btn-link" onclick="sampleAll();return false">Sample all</button>
-                -->
             </div>
             <div class="col">
                 <div style="padding-bottom:5px;">
@@ -323,7 +345,7 @@
         </div>
     </div>
     <script>
-$.LoadingOverlaySetup({imageColor              : '#ccc'});
+$.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'#17a2b8'});
         var graph = new Graph(document.getElementById("scratch"), 60, 10000);
 
         var genetic = Genetic.create();
@@ -540,7 +562,7 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
             var lineWidth = 3, strokeStyle = '#ffc107';
             graph.drawFunction(solution.variables, strokeStyle, lineWidth, genetic.formula.main);
             $('.fa-question-circle').tooltip();
-            $('#sample')[solution.error.uncertainty < 0.02 ? 'show' : 'hide']();
+            $('#sample')[known > 150 ? 'show' : 'hide']();
             onResize();
         };
         genetic.onFinished = displayResults;
@@ -592,14 +614,19 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
 
             ctx.beginPath();
             var x;
+            var old;
             for (x = 0; x < xmax; x += inc) {
                 var cx = x * xstride + bound[3];
                 var cy = bound[2] - genetic.evaluate(coefficients, x, fn) * ystride;
 
                 if (x == 0) {
                     ctx.moveTo(cx, cy);
-                } else {
+                    old = cy;
+                } else if (isFinite(cy)) {
                     ctx.lineTo(cx, cy);
+                    old = cy;
+                } else {
+                    ctx.moveTo(cx, old);
                 }
             }
 
@@ -608,17 +635,18 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
             ctx.restore();
         }
 
-        Graph.prototype.draw = function () {
+        Graph.prototype.draw = function (logScale) {
+            this.drawBars();
+            this.drawAxis(logScale);
+        };
 
-
+        Graph.prototype.drawBars = function () {
+            this.ctx.clearRect(0, 0, this.width, this.height);
             var ctx = this.ctx;
             ctx.save();
             var bound = this.bound;
-
             ctx.strokeStyle = "#000";
             ctx.fillStyle = "#000";
-            ctx.clearRect(0, 0, this.width, this.height);
-
             var xmax = this.xmax;
             var ymax = this.ymax;
             var xstride = (bound[1] - bound[3]) / xmax;
@@ -663,6 +691,22 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
             ctx.lineWidth = 1;
             var i;
 
+            ctx.restore();
+        }
+
+        Graph.prototype.drawAxis = function(logScale) {
+            var ctx = this.ctx;
+            ctx.save();
+            var bound = this.bound;
+            ctx.strokeStyle = "#000";
+            ctx.fillStyle = "#000";
+            var xmax = this.xmax;
+            var ymax = this.ymax;
+            var xstride = (bound[1] - bound[3]) / xmax;
+            var ystride = (bound[2] - bound[0]) / ymax;
+
+            graph.ctx.clearRect(0,0,bound[3]-1,bound[2]);
+            graph.ctx.clearRect(0,graph.bound[2]+1,graph.width,graph.height);
 
             // x bars
             ctx.strokeStyle = "#000";
@@ -679,8 +723,6 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
                 ctx.textAlign = "center";
                 ctx.fillText(dates[i], cx, y + 16);
             }
-
-
             // y bars
             for (i = 0; i <= ymax; i += Math.floor(ymax / 10)) {
                 var cx = bound[3];
@@ -692,12 +734,11 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
 
                 ctx.font = "12px sans-serif";
                 ctx.textAlign = "right";
-                ctx.fillText(i, cx - 8, y + 4);
+                var val = logScale? Math.exp(i) : i;
+                ctx.fillText(numeral(val).format('0a'), cx - 8, y + 4);
             }
-
-
             ctx.restore();
-        };
+        }
 
         Graph.prototype.drawText = function (msg) {
             var ctx = this.ctx;
@@ -949,6 +990,7 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
         }
         var clickFn = function (el, k) {
             return function () {
+                $('#sample').hide();
                 genetic.onFinished = displayResults;
                 el.parent().find('.active').removeClass('active');
                 el.addClass('active');
@@ -1082,42 +1124,55 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
         }
         window.addEventListener('hashchange', onHashChange);
         onHashChange();
-        graph.resize = function() {
-            var xmax = Math.max.apply(null, graph.vertices.map(function(x){ return x[0]; }));
-            if (!xmax) graph.refuse("Wrong xmax");
-            else graph.xmax = xmax;
-            var ymax = Math.max.apply(null, graph.vertices.map(function(x){ return x[1]; }));
-            if (!ymax) graph.refuse("Wrong ymax");
-            else graph.ymax = ymax;
-            graph.draw();
+        graph.resize = function(x,y) {
+            if (x) graph.xmax = Math.max.apply(null, graph.vertices.map(function(x){ return isFinite(x[0]) ? x[0] : -1/0; }));
+            if (y) graph.ymax = Math.max.apply(null, graph.vertices.map(function(x){ return isFinite(x[1]) ? x[1] : -1/0; }));
         }
         var plotTolerance = function (src, subj) {
-            graph.vertices = [];
-            cache[src][subj].map(function(s){
-                return graph.vertices.push([s.relstdev * 100, Math.abs((s.total-solution.total)/solution.total) * 100]);
+            displayResults(solution);
+            graph.vertices = [], graph.upper = [], graph.lower = [];
+            cache[src][subj].map(function(s, i){
+                graph.vertices.push([i-1, Math.log(s.total / s.error.range)]);
+                graph.vertices.push([i-1, Math.log(s.total * s.error.range)]);
+                graph.upper[i-1] = Math.log(s.total * s.error.range);
+                graph.lower[i-1] = Math.log(s.total / s.error.range);
             });
-            graph.resize();
-            graph.drawVertices('#f00');
-            graph.drawFunction([0,0,0], '#00f', 1, function(a,b,c,x) { return x; })
+            graph.resize(false,true);
+            graph.drawAxis(1);
+            graph.drawFunction([0,0,0], '#00f', 2, function(a,b,c,x) { return Math.log(solution.total); });
+            //graph.drawFunction([0,0,0], '#e00', 2, function(a,b,c,x) { return smooth(graph.upper, x); });
+            //graph.drawFunction([0,0,0], '#0d0', 2, function(a,b,c,x) { return smooth(graph.lower, x); });
+            graph.drawFunction([0,0,0], '#e00', 2, function(a,b,c,x) { return graph.upper[Math.round(x)]; });
+            graph.drawFunction([0,0,0], '#0d0', 2, function(a,b,c,x) { return graph.lower[Math.round(x)]; });
             genetic.onFinished = displayResults;
         }
+        function smooth(ls, x) {
+            var a = ls[Math.floor(x)], b = ls[Math.ceil(x)], c = x-Math.floor(x);
+            return a + (1 - Math.cos(c * Math.PI)) / 2 * (b - a);
+        }
         function loopDates(src, subj, fr, to, then) {
+            $.LoadingOverlay('show', {progress: true, text:'Running earlier predictions...'});
             then = then || function () { plotTolerance(src, subj); }
             function iter(n) { 
                 if (n >= (to || cases[subj].length)) {
-                    genetic.onFinished = then;
-                    location.hash='#'+['',src,subj.replace(/ /g, '+')].join(';');
-                    timeBackClip = 0;
+                    genetic.onFinished = function() {
+                        $.LoadingOverlay('hide');
+                        then();
+                    }
+                    timeBackClip = undefined;
                     estimate(subj);
                 }
                 else {
                     genetic.onFinished = function() { iter(n+1); }
-                    location.hash='#'+[n+1,src,subj.replace(/ /g, '+')].join(';');
+                    $.LoadingOverlay('progress', (n - fr) / (to - fr) * 100);
+                    timeBackClip = n+1;
+                    estimate(subj);
+                    //location.hash='#'+[n+1,src,subj.replace(/ /g, '+')].join(';');
                 }
             }
             iter(fr || 4);
         }
-        function sampleEstimation(then) {
+        function analyse(then) {
             var end = Math.min(dates.length, Math.floor(solution.points.end));
             var minPossible = -1, sum = 0;
             while (sum < 10 && minPossible < end) {
@@ -1140,8 +1195,8 @@ $.LoadingOverlaySetup({imageColor              : '#ccc'});
                     var cc = cases[name].reduce(function (a, b) { return a + b; }, 0);
                     if (cc > 500) {
                         genetic.onFinished = function () {
-                            if (solution.error.uncertainty < 0.02)
-                                sampleEstimation(startNext);
+                            if (known > 150)
+                                analyse(startNext);
                             else
                                 startNext()
                         }
