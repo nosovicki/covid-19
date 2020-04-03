@@ -144,13 +144,13 @@
             <p>
               <b>Abstract</b>
             <p>
-            This program explores predictive properties of <span style=font-size:150%;font-family:seriff>e<sup>-e<sup>-t</sup></sup></span> type of functions. Though we expect it to have some utility value, its predictions were not independently reviewed.
+            Current program explores predictive properties of <span style=font-size:150%;font-family:seriff>e<sup>-e<sup>-t</sup></sup></span> type of functions. Though we expect it to have some utility value, its predictions were not independently reviewed.
             <p>With that in mind, we apply our <a href="https://www.geogebra.org/graphing/svpu7zdd">model</a> to real-time COVID statistics. Using that model, we try to predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. 
-            <p>To assess prediction accuracy, program offers retrospective analysis against later observed values.
+            <p>To assess prediction power, program offers retrospective prediction analysis against later observed values.
             <p>
               <b>Implementation Details</b>
             <p>
-                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. All data is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a>. 
+                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. DAta is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a> and <a href="https://github.com/nytimes/covid-19-data">New York Times GitHub Data Repository</a>. 
             <p>
               Current software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
               Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of this project.
@@ -190,6 +190,9 @@
                 <ul class="nav nav-pills nav-fill" id=source>
   <li class="nav-item">
     <a class="nav-link active jhu" href=# onclick="sourceData('jhu');return false">JHU <i title="Use Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
+  </li>
+  <li class="nav-item">
+    <a class="nav-link nyt" href=# onclick="sourceData('nyt');return false">NYT <i title="US data by state, by New Your Times" class="fas fa-question-circle"></i></a>
   </li>
   <li class="nav-item">
     <a class="nav-link who" href=# onclick="sourceData('who');return false">WHO <i title="Use WHO Situational Reports (updated twice a week)" class="fas fa-question-circle"></i></a>
@@ -260,7 +263,7 @@
 			Total
                         <i title="Projected total number of confirmed cases, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
-                      <span id=fr-total></span>-<span id=to-total></span> <span class=sm>(x<span id=increase></span>)</span>
+                      <span class=text-success id=fr-total></span>-<span class=text-danger id=to-total></span> <span class=sm>(x<span id=increase></span>)</span>
                     </div>
                   </span>
                   </div><div class="col" style=min-width:50%>
@@ -820,6 +823,44 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             });
             window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
         };
+        var processCsvNYT = function (csv, county) {
+            window.dates = [],
+            window.cases = { };
+            window.data = { };
+            var idx = county ? 4 : 3;
+            var date, title, last = {};
+            csv.split('\n').map(function (s) {
+                var ls = s.split(',');
+                var k = ls[1];
+                if (county)
+                    k += (', ' + ls[2]);
+                if (date != ls[0]) {
+                    title = undefined;
+                    date = ls[0];
+                    dates.push(date);
+                    if (!data[date])
+                        data[date] = {};
+                }
+                if (title != k) {
+                    title = k;
+                    cases[title] = [];
+                    last[title] = 0;
+                    data[date][title];
+                }
+                data[date][title] = ls[idx];
+            });
+            dates.shift(); // remove title;
+            delete cases.undefined;
+            delete cases['county, state'];
+            delete cases['state'];
+            for (var k in cases) {
+                for (var i = 0; i < dates.length; ++i) {
+                    var n = (data[dates[i]][k] || 0);
+                    cases[k].push(n - last[k]);
+                    last[k] = n;
+                }
+            }
+        };
         var processCsvJHU = function (csv) {
             window.data = csv.split('\n').map(function (s) { return s.replace(/"([^,]+), ([^,]+)"/g, '$2 $1').split(','); });
             var titles = data.shift();
@@ -962,6 +1003,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 $('#date-yesterday').html('(' + moment(dates[currentPoint - 1]).format('DD MMM') + ')');
             } else
                 $('#confirmed-yesterday').html('<span class="badge badge-danger">NONE <i title="Not present in the data source" class="fas fa-question-circle text-white"></i></span>');
+                $('#date-yesterday').html('(' + moment().add(-1,'days').format('DD MMM') + ')');
             var dataPoints = graph.vertices.reduce(function (a, b) { return a + (b[1] > 0); }, 0);
             $('#sum').number(known);
             if (known < 10 || dataPoints < 3)
@@ -1012,7 +1054,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             if (window.clicked && $('#menu a:equals(' + clicked + ')').length)
                 $($('#menu a:equals(' + clicked + ')')[0]).click();
             else
-                $($('#menu a:equals(World)')[0]).click();
+                $($('#menu a:first')[0]).click();
             if ($('#search').val())
                 $('#search').keyup();
         }
@@ -1023,9 +1065,21 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             var error = function(){
                 graph.draw();
                 graph.refuse('Network error');
-                window.setInterval(graph.candy, 30);
+                var int = window.setInterval(graph.candy, 30);
+                window.setTimeout(function () { window.clearInterval(int); }, 5000);
             }
-            if (src == 'who')
+            if (src == 'nyt')
+                //$.get('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv').then(function (csv) {
+                $.get('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv').then(function (csv) {
+                    processCsvNYT(csv);
+                    initiateUI();
+                }).fail(function () {
+                    graph.refuse('Network error');
+                    $('.container').LoadingOverlay('hide');
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' })
+                    .then(error);
+                });
+            else if (src == 'who')
                 $.get('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/who_covid_19_situation_reports/who_covid_19_sit_rep_time_series/who_covid_19_sit_rep_time_series.csv').then(function (csv) {
                     processCsvWHO(csv);
                     adjust('China', 27);
@@ -1140,8 +1194,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             graph.resize(false,true);
             graph.drawAxis(1);
             graph.drawFunction([0,0,0], '#00f', 2, function(a,b,c,x) { return Math.log(solution.total); });
-            //graph.drawFunction([0,0,0], '#e00', 2, function(a,b,c,x) { return smooth(graph.upper, x); });
-            //graph.drawFunction([0,0,0], '#0d0', 2, function(a,b,c,x) { return smooth(graph.lower, x); });
+            //graph.drawFunction([0,0,0], '#dc3545', 2, function(a,b,c,x) { return smooth(graph.upper, x); });
+            //graph.drawFunction([0,0,0], '#28a745', 2, function(a,b,c,x) { return smooth(graph.lower, x); });
             graph.drawFunction([0,0,0], '#e00', 2, function(a,b,c,x) { return graph.upper[Math.round(x)]; });
             graph.drawFunction([0,0,0], '#0d0', 2, function(a,b,c,x) { return graph.lower[Math.round(x)]; });
             genetic.onFinished = displayResults;
