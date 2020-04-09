@@ -49,7 +49,6 @@
             text-align: center;
             font-weight: normal;
         }
-        h5 i { margin-top: 0.2em; }
         #figures > div.col > span {
             padding:5px;
             display:block;
@@ -64,8 +63,26 @@
             width: 53%;
             font-weight:normal;
         }
-        #figures {
+        #figures, .dropdown-menu {
             font-size: 75%;
+            line-height: 100%;
+        }
+        #legend {
+            display:none!important;
+            font-size:90%;
+        }
+        #legend caption {
+            font-size:90%;
+            padding:0 0 0 0;
+            white-space:nowrap;
+        }
+        #legend td {
+            padding: 2px 2px;
+            line-height: 85%;
+            font-size: 85%;
+        }
+        #legend td i {
+            font-size:90%;
         }
 
         .sm {
@@ -97,6 +114,7 @@
             cursor: pointer;
         }
 
+
 	    @media (min-width: 768px) {
             .container {
                 max-width: 864px;
@@ -109,7 +127,8 @@
                 font-size: 1.25em;
             }
             canvas { display:block; }
-            .handle { display:none; }
+            #legend { display:block!important; }
+            .handle { display:none!important; }
             body {
                 font-size: 1em;
             }
@@ -130,6 +149,7 @@
     <!--<script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>-->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/2.1.2/sweetalert.min.js"></script>
     <script src="genetic/genetic.js"></script>
+    <script src="kalman/kalman.min.js" type="text/javascript"></script>
 </head>
 <body>
     <div class="container body-content">
@@ -150,6 +170,8 @@
             <p>
               <b>Implementation Details</b>
             <p>
+            <!--<a href="https://www.geogebra.org/graphing/sk8vnujk">logistic curve</a>-->
+            <!--<a href="https://www.geogebra.org/graphing/kajd5hra">Generalized logistic curve</a>-->
                 We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. DAta is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a> and <a href="https://github.com/nytimes/covid-19-data">New York Times GitHub Data Repository</a>. 
             <p>
               Current software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
@@ -176,8 +198,30 @@
         <a class="nav-link active" href="index.html">Forecast</a>
       </li>
       -->
+      <li class="nav-item" id=method>
+      <div class="dropdown">
+        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Advanced</a>
+  <div class="dropdown-menu">
+    <a class="dropdown-item" onclick="setModel('gompertz');return false" href="#">Regression: Gompertz (the best) <i title="Gompertz regression" class="fas fa-question-circle"></i>
+    </a>
+    <a class="dropdown-item" onclick="setModel('logistic');return false" href="#">Regression: Logistic (poor results)<i title="Logistic regression plus Kalman filter" class="fas fa-question-circle"></i>
+    </a>
+    <a class="dropdown-item" onclick="setModel('genlog');return false" href="#">Regression: Generalized Logistic <i title="Generalized logistic regression" class="fas fa-question-circle"></i>
+    </a>
+  </div>
+</div>
+      </li>
+  </ul>
+    <ul class="navbar-nav">
       <li class="nav-item" id=sample style=display:none>
-        <a class="btn btn-danger nav-link" href="#" onclick="analyse();return false">ANALYSE</a>
+      <div class="dropdown">
+        <a class="btn btn-secondary nav-link dropdown-toggle" data-toggle="dropdown" href="#">ANALYSE</a>
+  <div class="dropdown-menu">
+    <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 7); });return false" href="#">7-day prediction</a>
+    <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 30); });return false" href="#">30-day prediction</a>
+    <a class="dropdown-item" onclick="analyse();return false" href="#">Overall prediction</a>
+  </div>
+</div>
       </li>
                 <!--
       <li class="nav-item">
@@ -187,23 +231,21 @@
                 -->
   </div>
     </ul>
-                <ul class="nav nav-pills nav-fill" id=source>
-  <li class="nav-item">
-    <a class="nav-link active jhu" href=# onclick="sourceData('jhu');return false">JHU <i title="Use Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link nyt" href=# onclick="sourceData('nyt');return false">NYT <i title="US data by state, by New Your Times" class="fas fa-question-circle"></i></a>
-  </li>
-  <li class="nav-item">
-    <a class="nav-link who" href=# onclick="sourceData('who');return false">WHO <i title="Use WHO Situational Reports (updated twice a week)" class="fas fa-question-circle"></i></a>
-  </li>
-</ul>
+      <div class="dropdown" id=source>
+          <a class="btn btn-secondary nav-link dropdown-toggle" data-toggle="dropdown" href="#">No Datasource</a>
+          <div class="dropdown-menu">
+            <a class="dropdown-item jhu" href=# onclick="sourceData('jhu');return false">World Reports, JHU <i title="Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item who" href=# onclick="sourceData('who');return false">World Reports, WHO <i title="WHO Situational Reports (updated twice a week)" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item nyt" href=# onclick="sourceData('nyt');return false">USA States, NYT <i title="US situation by state, from New Your Times" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item nytc" href=# onclick="sourceData('nytc');return false">USA Counties, NYT <i title="Detailed US situation, by county, from New Your Times" class="fas fa-question-circle"></i></a>
+        </div>
+    </div>
 </nav>
         <div class="row">
             <div class="col" style=min-width:742px;>
                 <div style=text-align:center>
-                    <canvas onclick="$(this).removeClass('show');$('.handle').show()" id="scratch" style="width: 700px; height: 350px;background:#fff"></canvas>
-                    <button class="btn btn-info handle" onclick="$('canvas').addClass('show');$(this).hide();">DISPLAY GRAPHIC</button>
+                    <canvas onclick="$('canvas, #legend').removeClass('show');$('.handle').show()" id="scratch" style="width: 700px; height: 350px;background:#fff"></canvas>
+                    <button class="btn btn-info handle" onclick="$('canvas, #legend').addClass('show');$(this).hide();">DISPLAY GRAPHIC</button>
                 </div>
                 <div class="progress" style=display:none;margin:10px>
                     <div class="progress-bar bg-info" role="progressbar" style="width: 1%;" aria-valuenow="1" aria-valuemin="0" aria-valuemax="100">1%</div>
@@ -233,7 +275,7 @@
                   <span class="flex-column align-items-start result">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1 d-flex justify-content-between">
-                        Prognosed today
+                        Expected today
                         <i title="Expected range of confirmed cases today, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <div id=fr-today></div>-<div id=to-today></div> <span class=sm>(<i id=sign></i><span id=today-increase></span>%)
@@ -260,7 +302,7 @@
                   <span class="flex-column align-items-start result font-weight-bold">
                     <div class="d-flex w-100 justify-content-between">
                       <h5 class="mb-1 d-flex justify-content-between">
-			Total
+			Expected Overall
                         <i title="Projected total number of confirmed cases, 95% confidence" class="fas fa-question-circle text-secondary"></i>
                       </h5>
                       <span class=text-success id=fr-total></span>-<span class=text-danger id=to-total></span> <span class=sm>(x<span id=increase></span>)</span>
@@ -353,33 +395,53 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
         var genetic = Genetic.create();
 
-        genetic.formula = {
-            main: function (K, B, C, x) { return Math.pow(K, 2) * Math.exp(K * (1 - Math.exp(B * (C - x))) - B * (x - C) - K); },
-            integral: function (K, B, C, x) { return (Math.exp(-Math.exp(B * (C - x)) * K) * K) / B; },
-            centerPoint: function (K, B, C) { return (B * C - Math.log(1 / K)) / B; },
-            startPoint: function (K, B, C) { return (B * C - Math.log(10 / K + 1 / 2000)) / B; },
-            // x= (B*C-ln((1)/(500K)))/(B)
-            endPoint: function (K, B, C) { return (B * C - Math.log(1 / 500 / K)) / B; },
+        var models = {
+            gompertz : {
+                formula : {
+                    main: function (K, B, C, x) { return Math.pow(K, 2) * Math.exp(K * (1 - Math.exp(B * (C - x))) - B * (x - C) - K); },
+                    integral: function (K, B, C, x) { return (Math.exp(-Math.exp(B * (C - x)) * K) * K) / B; },
+                    centerPoint: function (K, B, C) { return (B * C - Math.log(1 / K)) / B; },
+                    startPoint: function (K, B, C) { return (-Math.log((Math.log((K)/(B)))/(K))+B*C)/B; },
+                    endPoint: function (K, B, C) { return (B * C - Math.log(1 / 500 / K)) / B; },
+                },
+                seed:  function () { return [12000, 0.15, -15]; },
+                scale: [4000, 0.5, 5],
+            },
+            logistic: {
+                formula: {
+                    main: function (K, B, C, x) { return (K*Math.exp(B*(C-x))*B)/Math.pow((1+Math.exp(B*(C-x))),2); },
+                    integral: function (K, B, C, x) { return K/(1+Math.exp(B*(-x+C))); },
+                    centerPoint: function (K, B, C) { return C; },
+                    startPoint: function (K, B, C) { return (C*B-Math.log(250*K*B))/(B); },
+                    endPoint: function (K, B, C) { return (C*B+Math.log(250*K*B))/(B); },
+                },
+                seed:  function () { return [85000, 0.2, 35]; },
+                scale: [5000, 0.07, 5],
+            },
+            genlog: {
+                formula: {
+                    main: function (K, B, C, x) { var n = 0.3804; return (B*Math.exp(-B*(-C+x))*Math.pow((1+Math.exp(-B*(-C+x))),(-1-(1)/(n)))*K)/(n); },
+                    integral: function (K, B, C, x) { var n = 0.3804; return (K)/Math.pow((1+Math.exp(-B*(x-C))),((1)/(n))); },
+                    centerPoint: function (K, B, C) { var n = 0.3804; return C-(Math.log(n))/(B); },
+                    startPoint: function (K, B, C) { var n = 0.3804; return (B*C-Math.log(Math.pow(25000,n)-1))/(B); },
+                    endPoint: function (K, B, C) { var n = 0.3804; return (B*C-Math.log(Math.pow(((K-1)/(K)),(-n))-1))/(B); },
+                },
+                n: { China: 0.3804, World:0.767209, Korea:0.414364,Hubei:0.125844 },
+                seed:  function () { return [80500, 0.17, 40]; },
+                scale: [5000, 0.5, 5],
+            },
         };
+
+
+        genetic.formula = models.gompertz.formula;
+        genetic.seed = models.gompertz.seed;
+        genetic.scale = models.gompertz.scale;
 
         genetic.optimize = Genetic.Optimize.Minimize;
         genetic.select1 = Genetic.Select1.Tournament2;
         genetic.select2 = Genetic.Select2.FittestRandom;
 
-        genetic.seed = function () {
 
-            var a = [];
-            // create coefficients for polynomial with values between (-0.5, 0.5)
-
-            var i;
-            for (i = 0; i < this.userData["terms"]; ++i) {
-                a.push(Math.random() - 0.01);
-            }
-
-            return [12000, 0.15, -15];
-        };
-
-        genetic.scale = [4000, 0.5, 5]
 
         genetic.mutate = function (entity) {
 
@@ -525,22 +587,53 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                         model: Math.sqrt(Math.pow(areaErr, 2) + Math.pow(lastErr, 2) + Math.pow(diffErr, 2)),
                     };
                     solution.error.sigma = 0.1 + solution.error.model * Math.pow(solution.error.uncertainty, 3) * 350;
-                    solution.error.range = 1 + solution.error.sigma * 2;
-                    cache[currentSource][clicked][timeBackClip] = solution;
+                    var k = model == 'gompertz' ? 2 : 2;
+                    solution.error.range = 1 + solution.error.sigma * k;
+                    if (!cache[currentSource][clicked][timeBackClip])
+                        cache[currentSource][clicked][timeBackClip] = {};
+                    cache[currentSource][clicked][timeBackClip][model] = solution;
+                    window.estimationInProgress = 0;
                     genetic.onFinished(solution);
                 }
             }
         };
 
+        // combine two probability distributions.
+        // sigma must be sigma squared!
+        var combineGaussians = function (sigma, mu, sigma1, mu1) {
+            var k = sigma/(sigma+sigma1);
+            sigma = sigma - k * sigma;
+            mu = mu + k * (mu1 - mu);
+            return {sigma:sigma,mu:mu};
+        }
+        var myKalman = function(ar) {
+            var k, sigma, mu;
+            return ar.map(function (solution) {
+                var mu1 = solutionValue(solution, length);
+                var sigma1 = Math.pow(solution.error.sigma * mu1, 2);
+                if (!isFinite(mu1))
+                    return [mu1,NaN];
+                else if (mu == undefined) {
+                    mu = mu1;
+                    sigma = sigma1;
+                } else {
+                    var res = combineGaussians(sigma,mu,sigma1, mu1);
+                    sigma = res.sigma;
+                    mu = res.mu;
+                }
+                return [mu, Math.sqrt(sigma)];
+            });
+        }
+
         var displayResults = function (solution) {
             var length = solution.points.end - solution.points.start;
-            $('#length-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Length');
+            $('#length-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Expected') + ' Length');
             $('#length').html(numeral(length).format('0') + ' days');
             $('#sign').text(solution.increase.today > 0 ? '+' : '');
             $('#start').html(solution.dates.start.fromNow() + ' <span class=sm>' + solution.dates.start.format('DD MMM') + '</span>');
-            $('#end-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' End');
+            $('#end-title').text((solution.dates.end.isBefore(moment()) ? 'Observed' : 'Expected') + ' End');
             $('#days').html(solution.dates.end.fromNow() + ' <span class=sm>' + solution.dates.end.format('DD MMM') + '</span>');
-            $('#peak-title').text((solution.dates.peak.isBefore(moment()) ? 'Observed' : 'Prognosed') + ' Peak');
+            $('#peak-title').text((solution.dates.peak.isBefore(moment()) ? 'Observed' : 'Expected') + ' Peak');
             $('#peak').html(solution.dates.peak.fromNow() + ' <span class=sm>' + solution.dates.peak.format('DD MMM') + '</span>');
             $('#fr-today').number(solution.today / solution.error.range);
             $('#to-today').number(solution.today * solution.error.range);
@@ -581,6 +674,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             this.width = parseInt(canvas.style.width);
             this.height = parseInt(canvas.style.height);
 
+            this.legend = $('<div id=legend style="display:none;position:absolute;z-index:2;top:0;text-align:left;width:' + this.width + ';height:' + this.height + '">').insertAfter(this.canvas);
+
             // retina
             var dpr = window.devicePixelRatio || 1;
             canvas.width = this.width * dpr;
@@ -598,6 +693,16 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
             this.vertices = [];
             this.solutions = [];
+        }
+
+        Graph.prototype.addLegend = function (title, data, alignLeft) {
+            var align = alignLeft ? 'left' : 'right';
+            this.legend.html('<table style="position:absolute;' + align + ':0;bottom:0;margin:' + this.bound[0] + 'px 25px 70px ' + (this.bound[3] + 25) + 'px"><caption style=caption-side:top;text-align:' + align + '>' + title + '</caption><tr>' + data.map(function(d) {
+                var ln = '<div style="display:inline-block;border:solid 1px ' + d[0] + ';width:50px;height:0"></div>';
+                var txt = '<i title="' + d[2] + '" class="fas fa-question-circle text-secondary"></i>';
+                return '<td>' + (alignLeft ? [ln, d[1], txt] : [txt, d[1], ln]).join('</td><td>') + '</td>';
+            }).join('</tr><tr>') + '</tr></table>').show();
+            $('#legend i').tooltip();
         }
 
         Graph.prototype.drawFunction = function (coefficients, strokeStyle, lineWidth, fn) {
@@ -639,6 +744,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         }
 
         Graph.prototype.draw = function (logScale) {
+            this.legend.html('');
             this.drawBars();
             this.drawAxis(logScale);
         };
@@ -671,7 +777,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             }
 
             // y-grid
-            for (i = 0; i <= ymax; i += Math.floor(ymax / 10)) {
+            for (i = 0; i <= ymax; i += Math.max(Math.floor(ymax / 10), 1)) {
                 var cx = bound[3];
                 var y = bound[2] - i * ystride;
                 ctx.beginPath();
@@ -724,10 +830,11 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
                 ctx.font = "12px sans-serif";
                 ctx.textAlign = "center";
+                ctx.fillText(i+1, cx, y - 5);
                 ctx.fillText(dates[i], cx, y + 16);
             }
             // y bars
-            for (i = 0; i <= ymax; i += Math.floor(ymax / 10)) {
+            for (i = 0; i <= ymax; i += Math.max(Math.floor(ymax / 10), 1)) {
                 var cx = bound[3];
                 var y = bound[2] - i * ystride;
                 ctx.beginPath();
@@ -787,6 +894,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
     </script>
     <script type=text/javascript>
+        var gray = '#bbb', blue = '#00f', red = '#f00', green = '#28a745', violet = '#572f8355';
         window.cache = {};
         $.expr[":"].contains = $.expr.createPseudo(function (arg) {
             return function (elem) {
@@ -826,6 +934,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         var processCsvNYT = function (csv, county) {
             window.dates = [],
             window.cases = { };
+            if (!county)
+                cases['USA Total'] = [];
             window.data = { };
             var idx = county ? 4 : 3;
             var date, title, last = {};
@@ -850,13 +960,18 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 data[date][title] = ls[idx];
             });
             dates.shift(); // remove title;
+            if (!county)
+                cases['USA Total'] = dates.map(function(x) { return 0 });
             delete cases.undefined;
             delete cases['county, state'];
             delete cases['state'];
-            for (var k in cases) {
+            for (var k in cases) if (k != 'USA Total') {
                 for (var i = 0; i < dates.length; ++i) {
                     var n = (data[dates[i]][k] || 0);
-                    cases[k].push(n - last[k]);
+                    var nn = n - last[k];
+                    cases[k].push(nn);
+                    if (!county)
+                        cases['USA Total'][i] += nn;
                     last[k] = n;
                 }
             }
@@ -975,16 +1090,51 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             graph.draw();
             graph.drawVertices();
             graph.drawText(msg);
+            if (genetic.onFinished != displayResults)
+                genetic.onFinished();
+            window.estimationInProgress = 0;
         }
         var median = function(ar){
             for (var i = 0; i < ar.length; ++i){
                 var cur = ar[i];
                 var prev = ar[i-1] || cur;
                 var next = ar[i+1] || cur;
-                ar[i] = [cur[0], (prev[1] + next[1]) / 2];
+                var t = typeof(cur);
+                ar[i] = t == 'object'
+                    ? [cur[0], (prev[1] + next[1]) / 2]
+                    : t == 'number' ? (prev + next) / 2 : cur;
             }
         }
+        graph.loadVertices = function(country) {
+            graph.vertices = cases[country].map(function (c, i) { return [i, c]; });
+        }
+
+        var getFormerSolution = function(n) {
+            var models = cache[currentSource][clicked][n];
+            return models && models[model] //|| models['gompertz'] || models['genlog'];
+        }
+        var adjustLastValue = function() {
+            var n = graph.vertices.length - 1;
+            var orig = graph.vertices[n];
+            if (orig) orig = orig[1];
+            var prev = getFormerSolution(n);
+            if (prev) {
+                var tmp = graph.vertices;
+                graph.vertices = [n, orig];
+                graph.drawVertices('#ccc');
+                graph.vertices = tmp;
+                //res = combineGaussians(1 + Math.pow(prev.error.sigma,2), prev.today, Math.pow((prev.today - orig)/(prev.today + orig), 2), orig);
+                //graph.vertices[n] = [n, res.mu];
+                if (orig == 0 || prev.error.sigma < 2.5 && prev.today > orig) {
+                    var guess = prev.today;
+                    graph.vertices[n] = [n, guess];
+                    //cases[clicked][n] = guess;
+                }
+            }
+        }
+            
         var estimate = function (country) {
+            window.estimationInProgress = 1;
             window.clicked = country;
             if (!cache[currentSource][clicked])
                 cache[currentSource][clicked] = [];
@@ -992,9 +1142,10 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             $('.progress').show();
             $('#figures').hide();
             $('.result').show();
-            graph.vertices = cases[country].map(function (c, i) { return [i, c]; });
+            graph.loadVertices(country);
             if (window.timeBackClip)
                 graph.vertices.length = window.timeBackClip;
+            //adjustLastValue();
             window.known = graph.vertices.reduce(function (a, b) { return a + b[1]; }, 0);
             window.currentPoint = window.timeBackClip || moment().diff(moment(dates[0]), 'days')
             $('#confirmed-total').number(known);
@@ -1014,14 +1165,16 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             ymax = Math.round(ymax / factor) * factor;
             graph.xmax = graph.vertices.length;
             graph.ymax = Math.max(10, ymax);
+            window.yscale = graph.ymax;
             graph.draw();
             graph.drawText(country);
             //graph.drawVertices('#abc');
             //median(graph.vertices);
             //median(graph.vertices);
             graph.drawVertices('#000');
-            if (cache[currentSource][clicked][timeBackClip]) {
-                genetic.onFinished(cache[currentSource][clicked][timeBackClip]);
+            if (cache[currentSource][clicked][timeBackClip] && cache[currentSource][clicked][timeBackClip][model]) {
+                window.estimationInProgress = 0;
+                genetic.onFinished(cache[currentSource][clicked][timeBackClip][model]);
             }
             else {
                 var config = { iterations: 500, size: 250, crossover: 0.4, mutation: 1.0, skip: 10 };
@@ -1032,6 +1185,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         }
         var clickFn = function (el, k) {
             return function () {
+                if (window.estimationInProgress)
+                    return false;
                 $('#sample').hide();
                 genetic.onFinished = displayResults;
                 el.parent().find('.active').removeClass('active');
@@ -1041,8 +1196,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         }
         $('#search').on('keyup', search);
         var initiateUI = function() {
-            $('#source .nav-link.active').removeClass('active');
-            $('#source .nav-link.' + currentSource).addClass('active');
+            $('#source .dropdown-toggle').text($('#source .' + currentSource).text());
             $('.container').LoadingOverlay('hide');
             $('.actual').text('(' + moment(dates[window.timeBackClip || (dates.length - 1)]).add(1,'days').fromNow() + ')');
             $('#menu').html('');
@@ -1076,7 +1230,17 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 }).fail(function () {
                     graph.refuse('Network error');
                     $('.container').LoadingOverlay('hide');
-                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/CSSEGISandData</i></div>')[0], title: 'Network Error' })
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/nytimes</i></div>')[0], title: 'Network Error' })
+                    .then(error);
+                });
+            else if (src == 'nytc')
+                $.get('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv').then(function (csv) {
+                    processCsvNYT(csv, true);
+                    initiateUI();
+                }).fail(function () {
+                    graph.refuse('Network error');
+                    $('.container').LoadingOverlay('hide');
+                    swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>raw.githubusercontent.com/nytimes</i></div>')[0], title: 'Network Error' })
                     .then(error);
                 });
             else if (src == 'who')
@@ -1084,41 +1248,41 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     processCsvWHO(csv);
                     adjust('China', 27);
                     adjust('World', 27);
-                    delete cases['Hubei, China'];
-                    delete cases['Guangdong, China'];
-                    delete cases['Henan, China'];
-                    delete cases['Zhejiang, China'];
-                    delete cases['Hunan, China'];
-                    delete cases['Anhui, China'];
-                    delete cases['Jiangxi, China'];
-                    delete cases['Shandong, China'];
-                    delete cases['Jiangsu, China'];
-                    delete cases['Chongqing, China'];
-                    delete cases['Sichuan, China'];
-                    delete cases['Heilongjiang, China'];
-                    delete cases['Beijing, China'];
-                    delete cases['Shanghai, China'];
-                    delete cases['Hebei, China'];
-                    delete cases['Fujian, China'];
-                    delete cases['Guangxi, China'];
-                    delete cases['Shaanxi, China'];
-                    delete cases['Yunnan, China'];
-                    delete cases['Hainan, China'];
-                    delete cases['Guizhou, China'];
-                    delete cases['Tianjin, China'];
-                    delete cases['Shanxi, China'];
-                    delete cases['Liaoning, China'];
-                    delete cases['Hong Kong, China'];
-                    delete cases['Jilin, China'];
-                    delete cases['Gansu, China'];
-                    delete cases['Xinjiang, China'];
-                    delete cases['Inner Mongolia, China'];
-                    delete cases['Ningxia, China'];
-                    //delete cases['Taiwan, China'];
-                    delete cases['Qinghai, China'];
-                    //delete cases['Macau, China'];
-                    delete cases['Xizang, China'];
-                    delete cases["Unspecified*, China"];
+                    // delete cases['Hubei, China'];
+                    // delete cases['Guangdong, China'];
+                    // delete cases['Henan, China'];
+                    // delete cases['Zhejiang, China'];
+                    // delete cases['Hunan, China'];
+                    // delete cases['Anhui, China'];
+                    // delete cases['Jiangxi, China'];
+                    // delete cases['Shandong, China'];
+                    // delete cases['Jiangsu, China'];
+                    // delete cases['Chongqing, China'];
+                    // delete cases['Sichuan, China'];
+                    // delete cases['Heilongjiang, China'];
+                    // delete cases['Beijing, China'];
+                    // delete cases['Shanghai, China'];
+                    // delete cases['Hebei, China'];
+                    // delete cases['Fujian, China'];
+                    // delete cases['Guangxi, China'];
+                    // delete cases['Shaanxi, China'];
+                    // delete cases['Yunnan, China'];
+                    // delete cases['Hainan, China'];
+                    // delete cases['Guizhou, China'];
+                    // delete cases['Tianjin, China'];
+                    // delete cases['Shanxi, China'];
+                    // delete cases['Liaoning, China'];
+                    // delete cases['Hong Kong, China'];
+                    // delete cases['Jilin, China'];
+                    // delete cases['Gansu, China'];
+                    // delete cases['Xinjiang, China'];
+                    // delete cases['Inner Mongolia, China'];
+                    // delete cases['Ningxia, China'];
+                    // //delete cases['Taiwan, China'];
+                    // delete cases['Qinghai, China'];
+                    // //delete cases['Macau, China'];
+                    // delete cases['Xizang, China'];
+                    // delete cases["Unspecified*, China"];
                     initiateUI();
                 }).fail(function () {
                     $('.container').LoadingOverlay('hide');
@@ -1130,9 +1294,9 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     processCsvJHU(csv);
                     adjust('China', 22);
                     adjust('China', 24);
-                    adjust('Hubei, China', 22);
-                    spread('Hubei, China', 22);
-                    adjust('Hubei, China', 23);
+                    //adjust('Hubei, China', 22);
+                    //spread('Hubei, China', 22);
+                    //adjust('Hubei, China', 23);
                     adjust('World', 22);
                     adjust('World', 23);
                     initiateUI();
@@ -1152,6 +1316,20 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>ourworldindata.org</i></div>')[0], title: 'Network Error' });
                 });
         }
+        function setModel(m) {
+            model = m;
+            $('#method .dropdown-toggle').html(m == 'gompertz'
+                ? 'e<sup>-e<sup>-t</sup></sup>'
+                : m == 'logistic' ? '<div style="border-bottom:solid 1px;text-align:center">e<sup>t</sup></div>1+e<sup>t</sup>'
+                : '<div style="border-bottom:solid 1px;text-align:center">1</div><sup>n</sup>&radic;<span style=text-decoration:overline>1+e<sup>-t</sup></span>')
+                .css(m != 'gompertz' ? {fontSize:'80%', padding:'0 1rem'}:{fontSize:'100%',padding:'0.5rem 1rem'});
+            genetic.formula=models[m].formula;
+            genetic.seed=models[m].seed;
+            genetic.scale=models[m].scale;
+            if (window.clicked)
+                estimate(clicked);
+        }
+        setModel('gompertz');
         var onResize = function () {
             var foot = $('.footer').height() + 20;
             $('.auto-height').css('height', function () {
@@ -1170,6 +1348,10 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             window.clicked = appConf[2] && appConf[2].replace(/\+/g, ' ');
             var oldClip = window.timeBackClip;
             window.timeBackClip = parseInt(appConf[0]);
+            if (appConf[3]){
+                window.model = appConf[3];
+                genetic.formula = genetic[model];
+            }
             if (!window.currentSource || window.currentSource != appConf[1])
                 sourceData(appConf[1] || 'jhu');
             // true only when manually change timebackclip
@@ -1182,38 +1364,132 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             if (x) graph.xmax = Math.max.apply(null, graph.vertices.map(function(x){ return isFinite(x[0]) ? x[0] : -1/0; }));
             if (y) graph.ymax = Math.max.apply(null, graph.vertices.map(function(x){ return isFinite(x[1]) ? x[1] : -1/0; }));
         }
-        var plotTolerance = function (src, subj) {
+        graph.accumulated = function (ar, len) {
+            var accum = 0;
+            var res = ar.map(function(x) { return accum += x[1]; });
+            if (!len) return res;
+            return res.map(function (x, i) { return x - (res[i-len]||0); });
+
+        }
+
+        var solutionValue = function (s, length) {
+            return length == 1 ? s.today : length == 7 ? s.nextWeek : length == 30 ? s.nextMonth : s.total;
+        }
+        
+        var plotTolerance = function (src, subj, length) {
+            graph.draw()
+            graph.ymax = window.yscale;
+            graph.loadVertices(subj);
+            graph.drawText(subj);
+            graph.drawVertices('#000');
+            length = length || 0;
             displayResults(solution);
-            graph.vertices = [], graph.upper = [], graph.lower = [];
-            cache[src][subj].map(function(s, i){
-                graph.vertices.push([i-1, Math.log(s.total / s.error.range)]);
-                graph.vertices.push([i-1, Math.log(s.total * s.error.range)]);
-                graph.upper[i-1] = Math.log(s.total * s.error.range);
-                graph.lower[i-1] = Math.log(s.total / s.error.range);
+            var newCases = graph.vertices;
+            graph.vertices = [], graph.upper = [], graph.lower = [], graph.middle = [];
+            cache[src][subj].map(function(models, i){
+                var s = models[model];
+                if (s) {
+                    var x = solutionValue(s, length), up = Math.log(x * s.error.range + 1), low = Math.log(x / s.error.range + 1)
+                    graph.vertices.push([i-1, up]);
+                    graph.vertices.push([i-1, low]);
+                    graph.upper[i-1] = up;
+                    graph.lower[i-1] = low;
+                    graph.middle[i-1] = (up + low)/2;
+                }
             });
+            graph.accum = graph.accumulated(newCases).map(function(x,i) { return Math.log(x + 1); });
+            graph.accumN = graph.accumulated(newCases, length).map(function(x,i) { return graph.upper[i - length] ? Math.log(x + 1) : NaN; });
             graph.resize(false,true);
             graph.drawAxis(1);
-            graph.drawFunction([0,0,0], '#00f', 2, function(a,b,c,x) { return Math.log(solution.total); });
-            //graph.drawFunction([0,0,0], '#dc3545', 2, function(a,b,c,x) { return smooth(graph.upper, x); });
-            //graph.drawFunction([0,0,0], '#28a745', 2, function(a,b,c,x) { return smooth(graph.lower, x); });
-            graph.drawFunction([0,0,0], '#e00', 2, function(a,b,c,x) { return graph.upper[Math.round(x)]; });
-            graph.drawFunction([0,0,0], '#0d0', 2, function(a,b,c,x) { return graph.lower[Math.round(x)]; });
+            var legend = [
+                    [red, 'P<sub>MAX</sub>', 'Upper boundary of predicted range'],
+                    [green, 'P<sub>MIN</sub>', 'Lower boundary of predicted range']
+                ];
+            if (length) {
+                legend.push([gray, 'Ground truth', 'Actual data that was recordered ' + length + ' days later']);
+                graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return smooth(graph.accumN, x + length); });
+            } else {
+                //legend.push([gray, 'Known', 'Known value at the moment of making prediction']);
+                //graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return smooth(graph.accum, x); });
+                legend.push([gray, 'Ground truth', 'Latest prediction mean based on entirety of observation (till this day)']);
+                graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return Math.log(solutionValue(solution, length) + 1); });
+            }
+            //if (model == 'gompertz') {
+                graph.drawFunction([0,0,0], red, 2, function(a,b,c,x) { return graph.upper[Math.round(x)]; });
+                graph.drawFunction([0,0,0], green, 2, function(a,b,c,x) { return graph.lower[Math.round(x)]; });
+            //} else
+            //    graph.kalman(0, Math.log(Math.exp(graph.ymax)+1), function (mu, sigma, kf) { 
+            //        kf.filter(mu); return [Math.log(kf.x), Math.log(kf.uncertainty()+1)*1.5];
+            //    });
             genetic.onFinished = displayResults;
+            graph.addLegend('Forecast: ' + (length ? (length + '-day') : 'overall') + '<br>Method: ' + model, legend, solution.points.peak > graph.xmax / 2);
+        }
+        graph.compareModels = function(len) {
+            var models = {logistic:red,genlog:blue,gompertz:'#03a9f4'};
+            ls = {};
+            for (var k in models) {
+                var memory = cache[currentSource][clicked][NaN];
+                var s = memory && memory[model];
+                if (s) {
+                    solution = s;
+                    setModel(k);
+                    plotTolerance(currentSource, clicked, len);
+                    ls[k] = { hi: graph.upper, lo: graph.lower };
+                }
+            }
+            if (!Object.keys(ls).length)
+                return graph.refuse("No analysed models");
+            graph.draw(1);
+            graph.drawText(clicked);
+            var legend = [];
+            legend.push([gray, 'Ground truth', '']);
+            if (len)
+            graph.drawFunction([0,0,0], gray, 4, len ? function(a,b,c,x) { return smooth(graph.accumN, x + len); } :function(a,b,c,x) { return Math.log(solution.total + 1); });
+            for (var k in ls) {
+                legend.push([models[k], 'margins: ' + k, '']);
+                for (var kk in ls[k]) {
+                    var pp = ls[k][kk];
+                    // var kf = new KalmanFilter({R:0.001,Q:16000});
+                    // pp = pp.map(function(x) { return kf.filter(x); });
+                    for (var i = 0; i < 3; ++i)
+                        median(pp);
+                    graph.drawFunction([0,0,0], models[k], 2, function(j,i,c,x) { return pp[Math.round(x)]; });
+                }
+            }
+            graph.addLegend('Compare models<br>Forecast: ' + (len ? (len + '-day') : 'overall'), legend, solution.points.peak > graph.xmax / 2);
+        }
+        graph.kalman = function(R, Q, fn) {
+            var kf = new KalmanFilter({R:R,Q:Q});
+            graph.filtered = cache[currentSource][clicked].map(function(models) { 
+                var sol = models[model];
+                return fn(solutionValue(sol, length), sol.error.sigma, kf);
+            });
+            graph.upper = graph.filtered.map(function (x) { var m = x[0], rs = x[1] / m; r = 1 + rs * 2; return m * r; });
+            graph.lower = graph.filtered.map(function (x) { var m = x[0], rs = x[1] / m; r = 1 + rs * 2; return m / r; });
+            graph.middle = graph.filtered.map(function (x) { return x[0]; });
+            graph.drawFunction([0,0,0], red, 2, function(a,b,c,x) { return graph.upper[Math.round(x)+1]; });
+            //graph.drawFunction([0,0,0], violet, 1, function(a,b,c,x) { return smooth(graph.middle, x+1); });
+            graph.drawFunction([0,0,0], green, 2, function(a,b,c,x) { return graph.lower[Math.round(x)+1]; });
+        }
+        function sinSmooth(ls, x) {
+            var a = ls[Math.floor(x)], b = ls[Math.ceil(x)], c = x-Math.floor(x);
+            return a + (1 - Math.cos(c * Math.PI)) / 2 * (b - a);
         }
         function smooth(ls, x) {
             var a = ls[Math.floor(x)], b = ls[Math.ceil(x)], c = x-Math.floor(x);
-            return a + (1 - Math.cos(c * Math.PI)) / 2 * (b - a);
+            return a + c * (b - a);
         }
         function loopDates(src, subj, fr, to, then) {
             $.LoadingOverlay('show', {progress: true, text:'Running earlier predictions...'});
             then = then || function () { plotTolerance(src, subj); }
             function iter(n) { 
                 if (n >= (to || cases[subj].length)) {
-                    genetic.onFinished = function() {
+                    genetic.onFinished = function(sol) {
+                        window.solution = sol;
                         $.LoadingOverlay('hide');
                         then();
                     }
-                    timeBackClip = undefined;
+                    timeBackClip = NaN;
                     estimate(subj);
                 }
                 else {
@@ -1238,25 +1514,23 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         }
         function sampleAll() {
             var start = $($('#menu a')[0]);
-            window.predictions = { jhu:{}, who: {} };
+            window.predictions = { };
             var startNext = function () {
-                predictions[currentSource][clicked] = cache[currentSource][clicked].map(function(s){
+                predictions[currentSource] = predictions[currentSource] || {}; 
+                predictions[currentSource][clicked] = cache[currentSource][clicked].map(function(models){
+                    var s = models[model];
                     return [s.relstdev * 100, Math.abs((s.total-solution.total)/solution.total) * 100];
                 });
                 start = start.next();
                 if (start.length) {
                     var name = start.text();
-                    var cc = cases[name].reduce(function (a, b) { return a + b; }, 0);
-                    if (cc > 500) {
-                        genetic.onFinished = function () {
-                            if (known > 150)
-                                analyse(startNext);
-                            else
-                                startNext()
-                        }
-                        estimate(name);
-                    } else 
-                        startNext();
+                    genetic.onFinished = function () {
+                        if (known > 150 && solution.points.current - solution.points.peak > 5)
+                            analyse(startNext);
+                        else
+                            startNext()
+                    }
+                    estimate(name);
                 }
             }
             startNext();
