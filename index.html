@@ -57,15 +57,21 @@
         }
 
         h3 { font-size:34px; }
+        .dropdown-header {
+            font-size: 100%!important;
+        }
         h5 {
             font-size: 100%;
             white-space:nowrap;
             width: 53%;
             font-weight:normal;
         }
-        #figures, .dropdown-menu {
+        #figures {
             font-size: 75%;
             line-height: 100%;
+        }
+        .dropdown-menu {
+            font-size:100%;
         }
         #legend {
             display:none!important;
@@ -155,7 +161,7 @@
     <div class="container body-content">
         <div class="jumbotron" style="margin-bottom:0;padding:20px 30px 5px 30px">
         <h1>Predicting COVID-19</h1>
-            <p><i><b>Warning:</b> this software was not created by health professionals. For a professional forecast, see <a href="https://covid19.healthdata.org/united-states-of-america">COVID-19 Projections</a> by <a href="http://www.healthdata.org/">IHME</a></i><p>
+            <p><i><b>Warning:</b> this software is experimental. For a professional forecast, see <a href="https://covid19.healthdata.org/united-states-of-america">COVID-19 Projections</a> from <a href="http://www.healthdata.org/">IHME</a></i><p>
             <p>
             <p style=text-align:right;margin-bottom:0;margin-top:-20px>
                 <button class="btn btn-info" href=# onclick="$('.collapse.show').removeClass('show').addClass('tmp');$('.collapse:not(.tmp)').addClass('show');$('.collapse.tmp').removeClass('tmp')">
@@ -198,46 +204,56 @@
         <a class="nav-link active" href="index.html">Forecast</a>
       </li>
       -->
+      <li class="nav-item" id=noise>
+          <div class="dropdown">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Data noise reduction</a>
+              <div class="dropdown-menu">
+                  <h6 class="dropdown-header">Noise Reduction</h6>
+                  <a class="dropdown-item denoise-none" onclick="setNoise('none');return false" href="#"><i class="fas fa-tint-slash"></i> Off <i title="Don't streamline the data. Sometimes required" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item denoise-slight" onclick="setNoise('slight');return false" href="#"><i class="fas fa-star-half"></i> Slight <i title="Reveals small patterns in the data with minimal impact on prediction results. May cause inaccuracy" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item denoise-full" onclick="setNoise('full');return false" href="#"><i class="fas fa-tint"></i> Full <i title="Eliminates excessive data fluctuation. Usually improves prediction accuracy." class="fas fa-question-circle"></i></a>
+              </div>
+          </div>
+      </li>
       <li class="nav-item" id=method>
-      <div class="dropdown">
-        <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Advanced</a>
-  <div class="dropdown-menu">
-    <a class="dropdown-item" onclick="setModel('gompertz');return false" href="#">Regression: Gompertz (the best) <i title="Gompertz regression" class="fas fa-question-circle"></i>
-    </a>
-    <a class="dropdown-item" onclick="setModel('logistic');return false" href="#">Regression: Logistic (poor results)<i title="Logistic regression plus Kalman filter" class="fas fa-question-circle"></i>
-    </a>
-    <a class="dropdown-item" onclick="setModel('genlog');return false" href="#">Regression: Generalized Logistic <i title="Generalized logistic regression" class="fas fa-question-circle"></i>
-    </a>
-  </div>
-</div>
+          <div class="dropdown">
+              <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Advanced</a>
+              <div class="dropdown-menu">
+                  <h6 class="dropdown-header">Regression Model</h6>
+                  <a class="dropdown-item" onclick="setModel('gompertz');return false" href="#">Gompertz (optimal) <i title="Gompertz curve. Fast; Produces best results for cohesive geographic areas" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="setModel('logistic');return false" href="#">Standard logistic (poor results) <i title="Symmetric S-curve. Overfits data as a rule. But sometimes hits, surprisingly" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="setModel('genlog');return false" href="#">Generalized Logistic (good results) <i title="Asymmetric logistic curve fitted to historic data. Produces best results for aggregated geographic areas" class="fas fa-question-circle"></i></a>
+              </div>
+          </div>
       </li>
   </ul>
-    <ul class="navbar-nav">
+  <ul class="navbar-nav">
       <li class="nav-item" id=sample style=display:none>
-      <div class="dropdown">
-        <a class="btn btn-secondary nav-link dropdown-toggle" data-toggle="dropdown" href="#">ANALYSE</a>
-  <div class="dropdown-menu">
-    <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 7); });return false" href="#">7-day prediction</a>
-    <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 30); });return false" href="#">30-day prediction</a>
-    <a class="dropdown-item" onclick="analyse();return false" href="#">Overall prediction</a>
-  </div>
-</div>
+          <div class="dropdown">
+              <a class="btn btn-secondary nav-link dropdown-toggle" data-toggle="dropdown" href="#">ANALYSE</a>
+              <div class="dropdown-menu">
+                  <h6 class="dropdown-header">Retrospective Analysis</h6>
+                  <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 7); });return false" href="#">7-day prediction</a>
+                  <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 30); });return false" href="#">30-day prediction</a>
+                  <a class="dropdown-item" onclick="analyse();return false" href="#">Overall prediction</a>
+              </div>
+          </div>
       </li>
-                <!--
+      <!--
       <li class="nav-item">
-        <a class="nav-link" href="results.html">Results</a>
+          <a class="nav-link" href="results.html">Results</a>
       </li>
-                <button class="btn btn-link" onclick="sampleAll();return false">Sample all</button>
-                -->
+      <button class="btn btn-link" onclick="sampleAll();return false">Sample all</button>
+      -->
+  </ul>
   </div>
-    </ul>
       <div class="dropdown" id=source>
           <a class="btn btn-secondary nav-link dropdown-toggle" data-toggle="dropdown" href="#">No Datasource</a>
           <div class="dropdown-menu">
-            <a class="dropdown-item jhu" href=# onclick="sourceData('jhu');return false">World Reports, JHU <i title="Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
-            <a class="dropdown-item who" href=# onclick="sourceData('who');return false">World Reports, WHO <i title="WHO Situational Reports (updated twice a week)" class="fas fa-question-circle"></i></a>
-            <a class="dropdown-item nyt" href=# onclick="sourceData('nyt');return false">USA States, NYT <i title="US situation by state, from New Your Times" class="fas fa-question-circle"></i></a>
-            <a class="dropdown-item nytc" href=# onclick="sourceData('nytc');return false">USA Counties, NYT <i title="Detailed US situation, by county, from New Your Times" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item jhu" href=# onclick="sourceData('jhu');return false">World, JHU <i title="Johns Hopkins University CSSE daily reports (updated daily)" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item who" href=# onclick="sourceData('who');return false">World, WHO <i title="WHO Situational Reports (updated twice a week)" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item nyt" href=# onclick="sourceData('nyt');return false">States, NYT <i title="US situation by state, from New Your Times" class="fas fa-question-circle"></i></a>
+            <a class="dropdown-item nytc" href=# onclick="sourceData('nytc');return false">Counties, NYT <i title="US situation by county, from New Your Times" class="fas fa-question-circle"></i></a>
         </div>
     </div>
 </nav>
@@ -395,6 +411,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
         var genetic = Genetic.create();
 
+        var denoiseLevel = { none: 0, slight: 1, full: 10 };
+
         var models = {
             gompertz : {
                 formula : {
@@ -406,6 +424,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 },
                 seed:  function () { return [12000, 0.15, -15]; },
                 scale: [4000, 0.5, 5],
+                iterations: 900,
             },
             logistic: {
                 formula: {
@@ -415,21 +434,84 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     startPoint: function (K, B, C) { return (C*B-Math.log(250*K*B))/(B); },
                     endPoint: function (K, B, C) { return (C*B+Math.log(250*K*B))/(B); },
                 },
-                seed:  function () { return [85000, 0.2, 35]; },
-                scale: [5000, 0.07, 5],
+                seed:  function () { return [50000, 0.1, 80]; },
+                scale: [16666, 0.3, 20],
+                iterations: 500,
             },
             genlog: {
                 formula: {
-                    main: function (K, B, C, x) { var n = 0.3804; return (B*Math.exp(-B*(-C+x))*Math.pow((1+Math.exp(-B*(-C+x))),(-1-(1)/(n)))*K)/(n); },
-                    integral: function (K, B, C, x) { var n = 0.3804; return (K)/Math.pow((1+Math.exp(-B*(x-C))),((1)/(n))); },
-                    centerPoint: function (K, B, C) { var n = 0.3804; return C-(Math.log(n))/(B); },
-                    startPoint: function (K, B, C) { var n = 0.3804; return (B*C-Math.log(Math.pow(25000,n)-1))/(B); },
-                    endPoint: function (K, B, C) { var n = 0.3804; return (B*C-Math.log(Math.pow(((K-1)/(K)),(-n))-1))/(B); },
+                    main: function (K, B, C, x) { const n = 0.0220233; return (B*Math.exp(-B*(-C+x))*Math.pow((1+Math.exp(-B*(-C+x))),(-1-(1)/(n)))*K)/(n); },
+                    integral: function (K, B, C, x) { const n = 0.0220233; return (K)/Math.pow((1+Math.exp(-B*(x-C))),((1)/(n))); },
+                    centerPoint: function (K, B, C) { const n = 0.0220233; return C-(Math.log(n))/(B); },
+                    startPoint: function (K, B, C) { const n = 0.0220233; return (B*C-Math.log(Math.pow(25000,n)-1))/(B); },
+                    endPoint: function (K, B, C) { const n = 0.0220233; return (B*C-Math.log(Math.pow(((K-1)/(K)),(-n))-1))/(B); },
                 },
                 n: { China: 0.3804, World:0.767209, Korea:0.414364,Hubei:0.125844 },
-                seed:  function () { return [80500, 0.17, 40]; },
-                scale: [5000, 0.5, 5],
+                seed:  function () { return [50000,0.01,-15]; },
+                scale: [16666, 1, 5],
+                iterations: 900,
             },
+        };
+
+        var denoise = function(ls, strength) {
+            function kalmanError(modelError) {
+                var C = -0.8683, K = 10.23;
+                return 1 / Math.pow((modelError - C), K);
+                //return modelError;
+            }
+            function modelError(a, b, c) {
+                var proportional = (c - b) / (c + b);
+                var differential = (a-b)/(a+b)-(b-c)/(b+c);
+                return Math.sqrt(Math.pow(proportional || 0, 2) + Math.pow(differential || 0, 2));
+            }
+            function filter(kf, K) {
+                return function (i) {
+                    kf.R = K * kalmanError(modelError(ls[i-2], ls[i-1], ls[i]));
+                    return kf.filter(ls[i]);
+                    //return ls[i];
+                }
+            }
+            var a= filter(new KalmanFilter(), 1);
+            var b= filter(new KalmanFilter(), 2);
+            var c= new KalmanFilter({R:1.5 / strength});
+            var d= new KalmanFilter({R:1.5 / strength * 1.3 });
+            var i = ls.length-1;
+            while (++i < ls.length)
+                ls[i] = a(i);
+            while (--i >= 0)
+                ls[i] = b(i);
+            while (++i < ls.length)
+                ls[i] = c.filter(ls[i]);
+            while (--i >= 0)
+                ls[i] = d.filter(ls[i]);
+        }
+
+        var tryKalman = function(src, country, n1, n2) {
+            var a= new KalmanFilter({R:n1});
+            var b= new KalmanFilter({R:n2});
+            var orig = cases[country];
+            cases[country] = orig.map(function (x) { return a.filter(x); })
+                .reverse().map(function (x) { return a.filter(x); }).reverse();
+            genetic.onFinished = function () {
+                    analyse(function() {
+                        genetic.onFinished = function () {
+                            var results = {total:0, nextWeek:7, nextMonth:30};
+                            for (k in results) {
+                                var truth = graph.accumulated(graph.vertices, results[k]);
+                                var errv = Math.sqrt(cache[src][country].map(function (x,i) { 
+                                    return truth[i] ? Math.pow(x.genlog[k] - truth[i], 2) : 0;
+                                }).reduce(function (a,b) {
+                                    return a+b;
+                                }, 0));
+                                console.log([n1, n2, country, k, errv]);
+                            }
+                        };
+                        cases[country] = orig;
+                        delete cache[src][country][NaN];
+                        estimate(country);
+                    });
+            };
+            setModel('genlog');
         };
 
 
@@ -521,7 +603,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
             $("#solution").html(poly(pop[0].entity));
             $("#generation").html(generation + 1);
-            var completion = Math.round((generation + 1) / 5) + '%';
+            var completion = Math.round((generation + 1) / models[model].iterations * 100) + '%';
             $('.progress-bar').css({ width: completion }).html(completion);
             $("#bestfit").html(pop[0].fitness.toPrecision(4))
 
@@ -591,7 +673,9 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     solution.error.range = 1 + solution.error.sigma * k;
                     if (!cache[currentSource][clicked][timeBackClip])
                         cache[currentSource][clicked][timeBackClip] = {};
-                    cache[currentSource][clicked][timeBackClip][model] = solution;
+                    if (!cache[currentSource][clicked][timeBackClip][model])
+                        cache[currentSource][clicked][timeBackClip][model] = {};
+                    cache[currentSource][clicked][timeBackClip][model][noise] = solution;
                     window.estimationInProgress = 0;
                     genetic.onFinished(solution);
                 }
@@ -647,7 +731,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             $('#fr-total').number(Math.max(known + solution.nextMonth / solution.error.range, solution.total / solution.error.range));
             $('#to-total').number(Math.max(known + solution.nextMonth * solution.error.range, solution.total * solution.error.range));
             $('#increase').number(solution.total / known);
-            if (solution.total < 0 || solution.correlation < 0.3 || solution.correlation > 3 || length < 15)
+            if (!solution.total || solution.total < 0 || solution.correlation < 0.3 || solution.correlation > 3 || length < 15)
                 return graph.refuse('Regression did not converge');
             $('#correlation').number(solution.correlation);
             $('#model-error').number(solution.error.model, '0.0');
@@ -655,7 +739,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             $('#sigma').number(solution.error.sigma, '0.0');
             $('#sigma-rank').html(solution.error.sigma <= 0.2 ? '<span class="badge badge-success">LOW <i title="Prediction has high confidence" class="fas fa-question-circle text-white"></i></span>' : solution.error.sigma < 2.5 ? '<span class="badge badge-success">AVG <i title="Prediction is inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-danger">HIGH <i title="Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>');
             $('#figures').show();
-            var lineWidth = 3, strokeStyle = '#ffc107';
+            var lineWidth = 3, strokeStyle = yellow;
             graph.drawFunction(solution.variables, strokeStyle, lineWidth, genetic.formula.main);
             $('.fa-question-circle').tooltip();
             $('#sample')[known > 150 ? 'show' : 'hide']();
@@ -693,6 +777,17 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
             this.vertices = [];
             this.solutions = [];
+        }
+
+        Graph.prototype.drawArray = function (a, color) {
+            graph.vertices = a.map(function (x, i) { return [i, x]; });
+            graph.drawVertices(color || '#000');
+        }
+
+        Graph.prototype.denoiseVertices = function (strength) {
+            var ls = graph.vertices.map(function (x) { return x[1]; });
+            denoise(ls, strength);
+            graph.loadVertices(ls);
         }
 
         Graph.prototype.addLegend = function (title, data, alignLeft) {
@@ -894,7 +989,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
     </script>
     <script type=text/javascript>
-        var gray = '#bbb', blue = '#00f', red = '#f00', green = '#28a745', violet = '#572f8355';
+        var gray = '#bbb', blue = '#00f', red = '#f00', green = '#28a745', violet = '#572f8355', yellow = '#ffc107', paleYellow = '#ffc10755';
         window.cache = {};
         $.expr[":"].contains = $.expr.createPseudo(function (arg) {
             return function (elem) {
@@ -1082,8 +1177,9 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             graph.drawVertices('rgb(' + [1,2,3].map(function(){return Math.random() * 255;}) +')'); 
         }
         graph.refuse = function (msg) {
-            if (cache[currentSource][clicked])
-                delete cache[currentSource][clicked][timeBackClip];
+            var p;
+            if ((p = cache[currentSource][clicked]) && (p = p[timeBackClip]) && (p = p[model]))
+                delete p[noise];
             $('#sum').parent().show();
             $('#figures').show();
             $('.result').hide();
@@ -1105,8 +1201,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     : t == 'number' ? (prev + next) / 2 : cur;
             }
         }
-        graph.loadVertices = function(country) {
-            graph.vertices = cases[country].map(function (c, i) { return [i, c]; });
+        graph.loadVertices = function(ls) {
+            graph.vertices = ls.map(function (c, i) { return [i, c]; });
         }
 
         var getFormerSolution = function(n) {
@@ -1142,7 +1238,9 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             $('.progress').show();
             $('#figures').hide();
             $('.result').show();
-            graph.loadVertices(country);
+            graph.loadVertices(cases[country]);
+            if (denoiseLevel[noise])
+                graph.denoiseVertices(denoiseLevel[noise])
             if (window.timeBackClip)
                 graph.vertices.length = window.timeBackClip;
             //adjustLastValue();
@@ -1172,12 +1270,15 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             //median(graph.vertices);
             //median(graph.vertices);
             graph.drawVertices('#000');
-            if (cache[currentSource][clicked][timeBackClip] && cache[currentSource][clicked][timeBackClip][model]) {
+            if (cache[currentSource][clicked][timeBackClip]
+            && cache[currentSource][clicked][timeBackClip][model]
+            && cache[currentSource][clicked][timeBackClip][model][noise]) {
                 window.estimationInProgress = 0;
-                genetic.onFinished(cache[currentSource][clicked][timeBackClip][model]);
+                solution = cache[currentSource][clicked][timeBackClip][model][noise];
+                genetic.onFinished(solution);
             }
             else {
-                var config = { iterations: 500, size: 250, crossover: 0.4, mutation: 1.0, skip: 10 };
+                var config = { iterations: models[model].iterations, size: 250, crossover: 0.4, mutation: 1.0, skip: 10 };
                 var userData = { terms: 3, vertices: graph.vertices };
                 $('h1')[0].scrollIntoView();
                 genetic.evolve(config, userData);
@@ -1226,6 +1327,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 //$.get('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv').then(function (csv) {
                 $.get('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-states.csv').then(function (csv) {
                     processCsvNYT(csv);
+                    setModel('genlog', 1);
                     initiateUI();
                 }).fail(function () {
                     graph.refuse('Network error');
@@ -1236,6 +1338,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             else if (src == 'nytc')
                 $.get('https://raw.githubusercontent.com/nytimes/covid-19-data/master/us-counties.csv').then(function (csv) {
                     processCsvNYT(csv, true);
+                    setModel('gompertz',1);
                     initiateUI();
                 }).fail(function () {
                     graph.refuse('Network error');
@@ -1283,6 +1386,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     // //delete cases['Macau, China'];
                     // delete cases['Xizang, China'];
                     // delete cases["Unspecified*, China"];
+                    setModel('genlog',1);
                     initiateUI();
                 }).fail(function () {
                     $('.container').LoadingOverlay('hide');
@@ -1294,11 +1398,12 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     processCsvJHU(csv);
                     adjust('China', 22);
                     adjust('China', 24);
-                    //adjust('Hubei, China', 22);
-                    //spread('Hubei, China', 22);
-                    //adjust('Hubei, China', 23);
+                    adjust('Hubei, China', 22);
+                    spread('Hubei, China', 22);
+                    adjust('Hubei, China', 23);
                     adjust('World', 22);
                     adjust('World', 23);
+                    setModel('genlog',1);
                     initiateUI();
                 }).fail(function () {
                     graph.refuse('Network error');
@@ -1309,14 +1414,15 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             else if (src == 'oxford')
                 $.get('https://cowid.netlify.com/data/new_cases.csv').then(function (csv) {
                     processCsv(csv);
-                    adjust('China', 27);
-                    adjust('World', 27);
+                    //adjust('China', 27);
+                    //adjust('World', 27);
+                    setModel('gompertz',1);
                     initiateUI();
                 }).fail(function () {
                     swal({ icon: 'error', content: $('<div>Error getting COVID-19 data from <i>ourworldindata.org</i></div>')[0], title: 'Network Error' });
                 });
         }
-        function setModel(m) {
+        function setModel(m, norun) {
             model = m;
             $('#method .dropdown-toggle').html(m == 'gompertz'
                 ? 'e<sup>-e<sup>-t</sup></sup>'
@@ -1326,10 +1432,23 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             genetic.formula=models[m].formula;
             genetic.seed=models[m].seed;
             genetic.scale=models[m].scale;
-            if (window.clicked)
+            if (window.clicked && !norun)
                 estimate(clicked);
         }
-        setModel('gompertz');
+        function setNoise(level) {
+            var old = noise;
+            noise = level;
+            $('#noise .dropdown-toggle').html($('#noise .denoise-' + level + ' i:first')[0].outerHTML + ' ');
+            if (window.clicked) {
+                var vars = window.solution && solution.variables;
+                estimate(clicked)
+                if (vars && old) {
+                    graph.addLegend('Noise reduction', [[gray, old, 'Regression with old noise reduction'],[yellow, level, 'Regression with current noise reduction']], solution.points.peak > graph.xmax / 2);
+                    graph.drawFunction(vars, gray, 3, genetic.formula.main);
+                }
+            }
+        }
+        setNoise('slight');
         var onResize = function () {
             var foot = $('.footer').height() + 20;
             $('.auto-height').css('height', function () {
@@ -1379,15 +1498,15 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         var plotTolerance = function (src, subj, length) {
             graph.draw()
             graph.ymax = window.yscale;
-            graph.loadVertices(subj);
+            graph.loadVertices(cases[subj]);
             graph.drawText(subj);
             graph.drawVertices('#000');
             length = length || 0;
             displayResults(solution);
-            var newCases = graph.vertices;
+            var newCases = cases[clicked].map(function(x,i) { return [i, x]; });
             graph.vertices = [], graph.upper = [], graph.lower = [], graph.middle = [];
             cache[src][subj].map(function(models, i){
-                var s = models[model];
+                var s = models[model] && models[model][noise];
                 if (s) {
                     var x = solutionValue(s, length), up = Math.log(x * s.error.range + 1), low = Math.log(x / s.error.range + 1)
                     graph.vertices.push([i-1, up]);
@@ -1422,7 +1541,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             //        kf.filter(mu); return [Math.log(kf.x), Math.log(kf.uncertainty()+1)*1.5];
             //    });
             genetic.onFinished = displayResults;
-            graph.addLegend('Forecast: ' + (length ? (length + '-day') : 'overall') + '<br>Method: ' + model, legend, solution.points.peak > graph.xmax / 2);
+            graph.addLegend('Forecast: ' + (length ? (length + '-day') : 'overall') + '<br>Method: ' + model
+            + '<br>Data optimization: ' + noise, legend, solution.points.peak > graph.xmax / 2);
         }
         graph.compareModels = function(len) {
             var models = {logistic:red,genlog:blue,gompertz:'#03a9f4'};
@@ -1461,7 +1581,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         graph.kalman = function(R, Q, fn) {
             var kf = new KalmanFilter({R:R,Q:Q});
             graph.filtered = cache[currentSource][clicked].map(function(models) { 
-                var sol = models[model];
+                var sol = models[model][noise];
                 return fn(solutionValue(sol, length), sol.error.sigma, kf);
             });
             graph.upper = graph.filtered.map(function (x) { var m = x[0], rs = x[1] / m; r = 1 + rs * 2; return m * r; });
@@ -1480,12 +1600,17 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             return a + c * (b - a);
         }
         function loopDates(src, subj, fr, to, then) {
+            var start = moment();
+            var seed = models[model].seed;
+            var iters = models[model].iterations;
             $.LoadingOverlay('show', {progress: true, text:'Running earlier predictions...'});
             then = then || function () { plotTolerance(src, subj); }
             function iter(n) { 
                 if (n >= (to || cases[subj].length)) {
                     genetic.onFinished = function(sol) {
                         window.solution = sol;
+                        models[model].iterations = iters;
+                        models[model].seed = seed;
                         $.LoadingOverlay('hide');
                         then();
                     }
@@ -1493,8 +1618,18 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     estimate(subj);
                 }
                 else {
-                    genetic.onFinished = function() { iter(n+1); }
-                    $.LoadingOverlay('progress', (n - fr) / (to - fr) * 100);
+                    genetic.onFinished = function() {
+                        models[model].seed = solution.variables;
+                        models[model].iterations = 150;
+                        iter(n+1);
+                    }
+                    var complete = (n - fr) / (to - fr);
+                    var now = moment();
+                    var took = now - start;
+                    $.LoadingOverlay('progress', complete * 100);
+                    var remains = moment.duration(took / complete * (1 - complete));
+                    if (complete > 0)
+                        $.LoadingOverlay('text', 'About ' + remains.minutes() + ' Minutes ' + remains.seconds() + ' Seconds ' + 'remaining')
                     timeBackClip = n+1;
                     estimate(subj);
                     //location.hash='#'+[n+1,src,subj.replace(/ /g, '+')].join(';');
@@ -1505,7 +1640,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         function analyse(then) {
             var end = Math.min(dates.length, Math.floor(solution.points.end));
             var minPossible = -1, sum = 0;
-            while (sum < 10 && minPossible < end) {
+            while (sum < 3 && minPossible < end) {
                 sum += cases[clicked][++minPossible];
             }
             var start = Math.max(minPossible, Math.floor(solution.points.start));
@@ -1518,7 +1653,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             var startNext = function () {
                 predictions[currentSource] = predictions[currentSource] || {}; 
                 predictions[currentSource][clicked] = cache[currentSource][clicked].map(function(models){
-                    var s = models[model];
+                    var s = models[model][noise];
                     return [s.relstdev * 100, Math.abs((s.total-solution.total)/solution.total) * 100];
                 });
                 start = start.next();
