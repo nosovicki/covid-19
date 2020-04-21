@@ -21,13 +21,6 @@ var Genetic = Genetic || (function(){
 		}
 	};
 	
-	var Clone = function(obj) {
-		if (obj == null || typeof obj != "object")
-			return obj;
-		
-		return JSON.parse(JSON.stringify(obj));
-	};
-	
 	var Optimize = {
 		"Maximize": function (a, b) { return a >= b; }
 		, "Minimize": function (a, b) { return a < b; }
@@ -88,6 +81,13 @@ var Genetic = Genetic || (function(){
 		this.optimize = null;
 		this.generation = null;
 		this.notification = null;
+
+        this.clone = function(obj) {
+            if (obj == null || typeof obj != "object")
+                return obj;
+            return JSON.parse(JSON.stringify(obj));
+        };
+	
 		
 		this.configuration = {
 			"size": 250
@@ -114,12 +114,12 @@ var Genetic = Genetic || (function(){
 			
 			function mutateOrNot(entity) {
 				// applies mutation based on mutation probability
-				return Math.random() <= self.configuration.mutation && self.mutate ? self.mutate(Clone(entity)) : entity;
+				return Math.random() <= self.configuration.mutation && self.mutate ? self.mutate(self.clone(entity)) : entity;
 			}
 			
 			// seed the population
 			for (i=0;i<this.configuration.size;++i)  {
-				this.entities.push(Clone(this.seed()));
+				this.entities.push(this.clone(this.seed()));
 			}
 			
 			for (i=0;i<this.configuration.iterations;++i) {
@@ -174,7 +174,7 @@ var Genetic = Genetic || (function(){
 						&& newPop.length+1 < self.configuration.size // keeps us from going 1 over the max population size
 					) {
 						var parents = this.select2(pop);
-						var children = this.crossover(Clone(parents[0]), Clone(parents[1])).map(mutateOrNot);
+						var children = this.crossover(this.clone(parents[0]), this.clone(parents[1])).map(mutateOrNot);
 						newPop.push(children[0], children[1]);
 					} else {
 						newPop.push(mutateOrNot(self.select1(pop)));
@@ -229,7 +229,7 @@ var Genetic = Genetic || (function(){
 		// bootstrap webworker script
 		var blobScript = "'use strict'\n";
 		blobScript += "var Serialization = {'stringify': " + Serialization.stringify.toString() + ", 'parse': " + Serialization.parse.toString() + "};\n";
-		blobScript += "var Clone = " + Clone.toString() + ";\n";
+		blobScript += "var Clone = " + this.clone.toString() + ";\n";
 		
 		// make available in webworker
 		blobScript += "var Optimize = Serialization.parse(\"" + addslashes(Serialization.stringify(Optimize)) + "\");\n";
@@ -243,17 +243,19 @@ var Genetic = Genetic || (function(){
 		var self = this;
 		
 		if (this.usingWebWorker) {
+            if (this.worker)
+                this.worker.terminate();
 			// webworker
 			var blob = new Blob([blobScript]);
-			var worker = new Worker(window.URL.createObjectURL(blob));
-			worker.onmessage = function(e) {
+			this.worker = new Worker(window.URL.createObjectURL(blob));
+			this.worker.onmessage = function(e) {
 			  var response = e.data;
 			  self.notification(response.pop.map(Serialization.parse), response.generation, response.stats, response.isFinished);
 			};
-			worker.onerror = function(e) {
+			this.worker.onerror = function(e) {
 				alert('ERROR: Line ' + e.lineno + ' in ' + e.filename + ': ' + e.message);
 			};
-			worker.postMessage("");
+			this.worker.postMessage("");
 		} else {
 			// simulate webworker
 			(function(){
@@ -270,7 +272,7 @@ var Genetic = Genetic || (function(){
 		}, "Select1": Select1
 		, "Select2": Select2
 		, "Optimize": Optimize
-		, "Clone": Clone
+		, "Clone": self.clone
 	};
 	
 })();

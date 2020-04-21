@@ -211,18 +211,24 @@
                   <h6 class="dropdown-header">Noise Reduction</h6>
                   <a class="dropdown-item denoise-none" onclick="setNoise('none');return false" href="#"><i class="fas fa-tint-slash"></i> Off <i title="Don't streamline the data. Sometimes required" class="fas fa-question-circle"></i></a>
                   <a class="dropdown-item denoise-slight" onclick="setNoise('slight');return false" href="#"><i class="fas fa-star-half"></i> Slight <i title="Reveals small patterns in the data with minimal impact on prediction results. May cause inaccuracy" class="fas fa-question-circle"></i></a>
-                  <a class="dropdown-item denoise-full" onclick="setNoise('full');return false" href="#"><i class="fas fa-tint"></i> Full <i title="Eliminates excessive data fluctuation. Usually improves prediction accuracy." class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item denoise-full" onclick="setNoise('full');return false" href="#"><i class="fas fa-tint"></i> Full <i title="Eliminates excessive data fluctuation. Often improves prediction accuracy." class="fas fa-question-circle"></i></a>
+                  <a style=display:none class="dropdown-item denoise-extra" onclick="setNoise('extra');return false" href="#"><i class="fas fa-tint"></i> Extra <i title="Eliminates excessive data fluctuation. Often improves prediction accuracy." class="fas fa-question-circle"></i></a>
               </div>
           </div>
       </li>
       <li class="nav-item" id=method>
           <div class="dropdown">
-              <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Advanced</a>
+              <a style=color:#00d0ff class="nav-link dropdown-toggle" data-toggle="dropdown" href="#">Advanced</a>
               <div class="dropdown-menu">
-                  <h6 class="dropdown-header">Regression Model</h6>
-                  <a class="dropdown-item" onclick="setModel('gompertz');return false" href="#">Gompertz (optimal) <i title="Gompertz curve. Fast; Produces best results for cohesive geographic areas" class="fas fa-question-circle"></i></a>
-                  <a class="dropdown-item" onclick="setModel('logistic');return false" href="#">Standard logistic (poor results) <i title="Symmetric S-curve. Overfits data as a rule. But sometimes hits, surprisingly" class="fas fa-question-circle"></i></a>
-                  <a class="dropdown-item" onclick="setModel('genlog');return false" href="#">Generalized Logistic (good results) <i title="Asymmetric logistic curve fitted to historic data. Produces best results for aggregated geographic areas" class="fas fa-question-circle"></i></a>
+                  <h6 class="dropdown-header">Models</h6>
+                  <a class="dropdown-item" onclick="setModel('gompertz');return false" href="#">Gompertz <i title="Best for small, cohesive geographic areas" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="setModel('logistic');return false" href="#">Standard logistic <i title="Produces misleading results as a rule" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="setModel('genlog');return false" href="#">Generalized Logistic <i title="Best for aggregated geographic areas" class="fas fa-question-circle"></i></a>
+                  <!--<a class="dropdown-item" onclick="setModel('genlog2');return false" href="#">Generalized Logistic 2 <i title="Best for aggregated geographic areas" class="fas fa-question-circle"></i></a>-->
+                  <a id=custom style=display:none;color:red class="dropdown-item" onclick="setModel('custom');return false" href="#">Custom <i title="User model" class="fas fa-question-circle"></i></a>
+                  <div class="dropdown-divider"></div>
+                  <a class="dropdown-item text-primary" onclick="trainFrom(clicked);return false" href="#">Train a model <i title="Create a model that fits current data best" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item text-primary" onclick="loadModel();return false" href="#">Load model <i title="Load custom model" class="fas fa-question-circle"></i></a>
               </div>
           </div>
       </li>
@@ -233,9 +239,10 @@
               <a class="btn btn-secondary nav-link dropdown-toggle" data-toggle="dropdown" href="#">ANALYSE</a>
               <div class="dropdown-menu">
                   <h6 class="dropdown-header">Retrospective Analysis</h6>
-                  <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 7); });return false" href="#">7-day prediction</a>
-                  <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 30); });return false" href="#">30-day prediction</a>
-                  <a class="dropdown-item" onclick="analyse();return false" href="#">Overall prediction</a>
+                  <a class="dropdown-item" onclick="analyse(function () { plotDuration(); });return false" href="#">Duration estimate <i title="Analyse duration projections" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 7); });return false" href="#">7-day prediction <i title="Next week increase, forecasted to actual juxtaposition" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="analyse(function () { plotTolerance(currentSource, clicked, 30); });return false" href="#">30-day prediction <i title="Next month increase, forecasted to actual juxtaposition" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item" onclick="analyse();return false" href="#">Overall prediction <i title="Compare all earlier forecasts to current one" class="fas fa-question-circle"></i></a>
               </div>
           </div>
       </li>
@@ -411,10 +418,11 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
         var genetic = Genetic.create();
 
-        var denoiseLevel = { none: 0, slight: 1, full: 10 };
+        var denoiseLevel = { none: 0, slight: 1, full: 10, extra: 40 };
 
         var models = {
             gompertz : {
+                variables: 3,
                 formula : {
                     main: function (K, B, C, x) { return Math.pow(K, 2) * Math.exp(K * (1 - Math.exp(B * (C - x))) - B * (x - C) - K); },
                     integral: function (K, B, C, x) { return (Math.exp(-Math.exp(B * (C - x)) * K) * K) / B; },
@@ -425,8 +433,10 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 seed:  function () { return [12000, 0.15, -15]; },
                 scale: [4000, 0.5, 5],
                 iterations: 900,
+                html: 'e<sup>-e<sup>-t</sup></sup>',
             },
             logistic: {
+                variables: 3,
                 formula: {
                     main: function (K, B, C, x) { return (K*Math.exp(B*(C-x))*B)/Math.pow((1+Math.exp(B*(C-x))),2); },
                     integral: function (K, B, C, x) { return K/(1+Math.exp(B*(-x+C))); },
@@ -436,9 +446,11 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 },
                 seed:  function () { return [50000, 0.1, 80]; },
                 scale: [16666, 0.3, 20],
-                iterations: 500,
+                iterations: 900,
+                html: '<div style="border-bottom:solid 1px;text-align:center">e<sup>t</sup></div>1+e<sup>t</sup>',
             },
             genlog: {
+                variables: 3,
                 formula: {
                     main: function (K, B, C, x) { const n = 0.0220233; return (B*Math.exp(-B*(-C+x))*Math.pow((1+Math.exp(-B*(-C+x))),(-1-(1)/(n)))*K)/(n); },
                     integral: function (K, B, C, x) { const n = 0.0220233; return (K)/Math.pow((1+Math.exp(-B*(x-C))),((1)/(n))); },
@@ -450,8 +462,121 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 seed:  function () { return [50000,0.01,-15]; },
                 scale: [16666, 1, 5],
                 iterations: 900,
+                html: '<div style="border-bottom:solid 1px;text-align:center">1</div><sup>n</sup>&radic;<span style=text-decoration:overline>1+e<sup>-t</sup></span>',
+            },
+            genlog2: {
+                variables: 3,
+                formula: {
+                    main: function (K, n, C, x) { var B=0.0596948+n*0.127016; return (B*Math.exp(-B*(-C+x))*Math.pow((1+Math.exp(-B*(-C+x))),(-1-(1)/(n)))*K)/(n); },
+                    integral: function (K, n, C, x) { var B=0.0596948+n*0.127016;return (K)/Math.pow((1+Math.exp(-B*(x-C))),((1)/(n))); },
+                    centerPoint: function (K, n, C) { var B=0.0596948+n*0.127016;return C-(Math.log(n))/(B); },
+                    startPoint: function (K, n, C) { var B=0.0596948+n*0.127016;return (B*C-Math.log(Math.pow(25000,n)-1))/(B); },
+                    endPoint: function (K, n, C) { var B=0.0596948+n*0.127016;return (B*C-Math.log(Math.pow(((K-1)/(K)),(-n))-1))/(B); },
+                },
+                seed:  function () { return [500000,0.00115,-15]; },
+                scale: [150000, 0.004, 5],
+                iterations: 900,
+                html: '<span style=color:orange><div style="border-bottom:solid 1px;text-align:center">1</div><sup>n</sup>&radic;<span style=text-decoration:overline>1+e<sup>-t</sup></span></span>',
             },
         };
+
+        var deleteModelFromCache = function (modelName) {
+            for (var src in cache)
+                for (var subj in cache[src])
+                    for (var n in cache[src][subj])
+                        delete cache[src][subj][n][modelName];
+        }
+
+        var trainFrom = function (subj) {
+            genetic.onFinished = function(sol) {
+                if (sol.points.peak >= sol.points.current) {
+                    genetic.onFinished = displayResults;
+                    return graph.refuse('Cannot train on data until peak was reached');
+                }
+                var vars = solution.variables;
+                vars[0] = 0.0220233;
+                var saved = { modelName: model, formula: genetic.formula, seed: genetic.seed, scale: genetic.scale  };
+                model = Math.random().toString();
+                var m = {
+                    formula: {},
+                    iterations: 300,
+                    seed: new Function([],
+                    'return ' + JSON.stringify(vars) + ';'), scale: vars.map(function (x) { return x / 3; }),
+                };
+                for (var k in genFormula)
+                    m.formula[k] = new Function(['K','B','C','x'], genFormula[k].toString().split('{')[1].split('}')[0].replace('848076', 'K; K=' + solution.total));
+                for (var k in m)
+                    genetic[k] = m[k];
+                models[model] = m;
+                var end = Math.min(dates.length, Math.floor(solution.points.end));
+                var minPossible = -1, sum = 0;
+                while (sum < 3 && minPossible < end) {
+                    sum += cases[clicked][++minPossible];
+                }
+                var start = Math.max(minPossible, Math.floor(solution.points.start));
+                var start = minPossible;
+                var then = function (sol) {
+                    var vars = cache[currentSource][subj].map(function(x){ return x[model][noise].variables; });
+                    var mean = graph.findDistributionMean(vars.map(function(x){ return x[0]; }));
+                    window.training = vars.map(function (x) { return x.join('\t'); }).join('\n');
+                    console.log('Generated n and B distribution saved to window.training');
+                    delete models[model];
+                    deleteModelFromCache(model);
+                    model = saved.modelName;
+                    delete saved.modelName;
+                    for (var k in saved)
+                        genetic[k] = saved[k];
+                    genetic.onFinished = displayResults;
+                    loadModel({ slant: mean, speed: 10 });
+                }
+                loopDates(currentSource, clicked, start, end, then, 500);
+            }
+            clicked = subj;
+            estimate(subj);
+        }
+
+        var genFormula = {
+            main: function (K, B, C, x) { var n = 848076; return (B*Math.exp(-B*(-C+x))*Math.pow((1+Math.exp(-B*(-C+x))),(-1-(1)/(n)))*K)/(n); },
+            integral: function (K, B, C, x) { var n = 848076; return (K)/Math.pow((1+Math.exp(-B*(x-C))),((1)/(n))); },
+            centerPoint: function (K, B, C) { var n = 848076; return C-(Math.log(n))/(B); },
+            startPoint: function (K, B, C) { var n = 848076; return (B*C-Math.log(Math.pow(25000,n)-1))/(B); },
+            endPoint: function (K, B, C) { var n = 848076; return (B*C-Math.log(Math.pow(((K-1)/(K)),(-n))-1))/(B); },
+        };
+
+        var loadModel = function (conf) {
+            conf = conf || window.customConf || { slant: 4.03, speed: 10 };
+            swal({
+                title: 'Your model',
+                text: 'Press "Load". The model will appear under Models menu as "Custom"',
+                content: $('<textarea style=width:400px;height:66px onchange="swal.setActionValue($(this).val())">' + JSON.stringify(conf) + '</textarea>')[0],
+                buttons: ['Cancel', 'Load'],
+            }).then(function(json) {
+                if (!json) return
+                try {
+                    json = JSON.parse(json);
+                    for (var k in json)
+                        conf[k] = json[k];
+                    window.customConf = conf;
+                    var seed = [100000,0.1,50];
+                    var model = {
+                        variables: 3,
+                        seed:  new Function([], 'return ' + JSON.stringify(seed) + ';'),
+                        scale: seed.map(function (x) { return x / 3; }),
+                        iterations: Math.round(10000 / conf.speed),
+                        html: 'Custom',
+                        formula: {},
+                    };
+                    for (var k in genFormula)
+                        model.formula[k] = new Function(['K','B','C','x'], genFormula[k].toString().split('{')[1].split('}')[0].replace('848076', conf.slant));
+                    models.custom = model;
+                    $('#custom').show();
+                    deleteModelFromCache('custom');
+                    setModel('custom');
+                } catch(e) {
+                    swal({ icon: 'error', title: e.message, text: 'Loading model failed' })
+                }
+            });
+        }
 
         var denoise = function(ls, strength) {
             function kalmanError(modelError) {
@@ -523,7 +648,9 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         genetic.select1 = Genetic.Select1.Tournament2;
         genetic.select2 = Genetic.Select2.FittestRandom;
 
-
+        genetic.clone = function (obj) {
+            return obj && typeof(obj) == 'object' ? [].concat(obj) : obj;
+        }
 
         genetic.mutate = function (entity) {
 
@@ -536,37 +663,37 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             return entity;
         };
 
+        // crossover via interpolation
+        genetic.lerp = function (a, b, p) {
+            return a + (b - a) * p;
+        }
+
         genetic.crossover = function (mother, father) {
-
-            // crossover via interpolation
-            function lerp(a, b, p) {
-                return a + (b - a) * p;
-            }
-
             var len = mother.length;
             var i = Math.floor(Math.random() * len);
             var r = Math.random();
             var son = [].concat(father);
             var daughter = [].concat(mother);
 
-            son[i] = lerp(father[i], mother[i], r);
-            daughter[i] = lerp(mother[i], father[i], r);
+            son[i] = genetic.lerp(father[i], mother[i], r);
+            daughter[i] = genetic.lerp(mother[i], father[i], r);
 
             return [son, daughter];
         };
 
-        genetic.evaluate = function (coefficients, x, fn) {
-            return fn(coefficients[0], coefficients[1], coefficients[2], x);
+        genetic.bind = function (fn, coefficients) {
+            return fn.bind.apply(fn, [null].concat(coefficients));
         }
 
         genetic.fitness = function (entity) {
 
             var sumSqErr = 0;
             var vertices = this.userData["vertices"];
+            var fn = this.bind(genetic.formula.main, entity) 
 
             var i;
             for (i = 0; i < vertices.length; ++i) {
-                var err = this.evaluate(entity, vertices[i][0], genetic.formula.main) - vertices[i][1];
+                var err = fn(vertices[i][0]) - vertices[i][1];
                 sumSqErr += err * err;
             }
 
@@ -578,107 +705,65 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
         genetic.notification = function (pop, generation, stats, isFinished) {
 
-            function poly(entity) {
-                var a = [];
-                var i;
-                for (i = entity.length - 1; i >= 0; --i) {
-                    var buf = entity[i].toPrecision(2);
-                    if (i > 1)
-                        buf += "<em><b>x<sup>" + i + "<sup></b></em>";
-                    else if (i == 1)
-                        buf += "<em><b>x</b></em>";
-
-                    a.push(buf);
-                }
-                return a.join(" + ");
-            }
-
-            function lerp(a, b, p) {
-                return a + (b - a) * p;
-            }
-
-            if (generation == 0) {
-                graph.solutions = [];
-            }
-
-            $("#solution").html(poly(pop[0].entity));
-            $("#generation").html(generation + 1);
             var completion = Math.round((generation + 1) / models[model].iterations * 100) + '%';
             $('.progress-bar').css({ width: completion }).html(completion);
-            $("#bestfit").html(pop[0].fitness.toPrecision(4))
 
-            $("#vertexerror").html((pop[0].fitness / graph.vertices.length).toPrecision(4));
-
-            ;
-            $("#avgbestfit").html(stats.mean.toPrecision(4));
-            $("#errorstdev").html(stats.stdev.toPrecision(4));
-
-
-            var last = graph.last || "";
-
-            var str = pop[0].entity.join(",");
-            if (last != str || isFinished) {
-
-                if (last != str) {
-                    graph.solutions.push(pop[0].entity);
-                    graph.last = str;
+            if (isFinished) {
+                var res = pop[0].entity;
+                if (!res)
+                    return graph.refuse("No solution found");
+                window.solution = {
+                    variables: res,
+                    points: {
+                        start: genetic.formula.startPoint.apply(null, res),
+                        lastKnown: graph.vertices.length - 1,
+                        current: currentPoint,
+                        peak: genetic.formula.centerPoint.apply(null, res),
+                        end: genetic.formula.endPoint.apply(null, res)
+                    },
                 }
-
-                if (isFinished) {
-                    var res = graph.solutions.pop();
-                    window.solution = {
-                        variables: res,
-                        points: {
-                            start: genetic.formula.startPoint.apply(null, res),
-                            lastKnown: graph.vertices.length - 1,
-                            current: currentPoint,
-                            peak: genetic.formula.centerPoint.apply(null, res),
-                            end: genetic.formula.endPoint.apply(null, res)
-                        },
-                    }
-                    var zero = moment(dates[0]);
-                    solution.dates = {
-                        start: zero.clone().add(solution.points.start, 'days'),
-                        peak: zero.clone().add(solution.points.peak, 'days'),
-                        end: zero.clone().add(solution.points.end, 'days')
-                    };
-            	    var calc = function(formula, x) { return formula(res[0], res[1], res[2], x); };
-                    solution.correlation = (calc(genetic.formula.integral, solution.points.lastKnown) - calc(genetic.formula.integral, 0)) / known;
-                    solution.max = calc(genetic.formula.main, solution.points.peak);
-            	    solution.total =  calc(genetic.formula.integral, solution.points.end);
-            	    var now = calc(genetic.formula.integral, solution.points.current);
-            	    solution.today = calc(genetic.formula.main, solution.points.current);
-                    solution.nextWeek = calc(genetic.formula.integral, solution.points.current + 7) - now;
-                    solution.nextMonth = calc(genetic.formula.integral, solution.points.current + 30) - now;
-                    var yester = graph.vertices[currentPoint-1];
-                    solution.increase = { 
-                        today: yester && yester[1] ? ((solution.today - yester[1]) / yester[1]) : 0
-                    };
-                    var observationLength = Math.min(solution.points.lastKnown, solution.points.end) - Math.max(0, solution.points.start);
-                    var totalLength = solution.points.end - Math.max(0, solution.points.start);
-                    var areaX = (calc(genetic.formula.integral, solution.points.lastKnown) - calc(genetic.formula.integral, 0));
-                    var areaErr = (areaX - known) / (areaX + known) * 3;
-                    var prevX = calc(genetic.formula.main, solution.points.lastKnown - 1);
-                    var prevR = graph.vertices[solution.points.lastKnown-1][1];
-                    var lastX = calc(genetic.formula.main, solution.points.lastKnown);
-                    var lastR = graph.vertices[solution.points.lastKnown][1];
-                    var diffErr = ((lastX - prevX) - (lastR - prevR)) / solution.max / 1.5;
-                    var lastErr = (lastX - lastR) / (solution.max / 10 + lastX + lastR) * 2;
-                    var uncertainty = Math.pow((totalLength-observationLength)/(totalLength+observationLength), 2) / 2;
-                    solution.error = { proportional: lastErr, integral: areaErr, diff: diffErr, uncertainty: uncertainty,
-                        model: Math.sqrt(Math.pow(areaErr, 2) + Math.pow(lastErr, 2) + Math.pow(diffErr, 2)),
-                    };
-                    solution.error.sigma = 0.1 + solution.error.model * Math.pow(solution.error.uncertainty, 3) * 350;
-                    var k = model == 'gompertz' ? 2 : 2;
-                    solution.error.range = 1 + solution.error.sigma * k;
-                    if (!cache[currentSource][clicked][timeBackClip])
-                        cache[currentSource][clicked][timeBackClip] = {};
-                    if (!cache[currentSource][clicked][timeBackClip][model])
-                        cache[currentSource][clicked][timeBackClip][model] = {};
-                    cache[currentSource][clicked][timeBackClip][model][noise] = solution;
-                    window.estimationInProgress = 0;
-                    genetic.onFinished(solution);
-                }
+                var zero = moment(dates[0]);
+                solution.dates = {
+                    start: zero.clone().add(solution.points.start, 'days'),
+                    peak: zero.clone().add(solution.points.peak, 'days'),
+                    end: zero.clone().add(solution.points.end, 'days')
+                };
+                var calc = function(formula, x) { return genetic.bind(formula, res)(x); };
+                solution.correlation = (calc(genetic.formula.integral, solution.points.lastKnown) - calc(genetic.formula.integral, 0)) / known;
+                solution.max = calc(genetic.formula.main, solution.points.peak);
+                solution.total =  calc(genetic.formula.integral, solution.points.end);
+                var now = calc(genetic.formula.integral, solution.points.current);
+                solution.today = calc(genetic.formula.main, solution.points.current);
+                solution.nextWeek = calc(genetic.formula.integral, solution.points.current + 7) - now;
+                solution.nextMonth = calc(genetic.formula.integral, solution.points.current + 30) - now;
+                var yester = graph.vertices[currentPoint-1];
+                solution.increase = { 
+                    today: yester && yester[1] ? ((solution.today - yester[1]) / yester[1]) : 0
+                };
+                var observationLength = Math.min(solution.points.lastKnown, solution.points.end) - Math.max(0, solution.points.start);
+                var totalLength = solution.points.end - Math.max(0, solution.points.start);
+                var areaX = (calc(genetic.formula.integral, solution.points.lastKnown) - calc(genetic.formula.integral, 0));
+                var areaErr = (areaX - known) / (areaX + known) * 3;
+                var prevX = calc(genetic.formula.main, solution.points.lastKnown - 1);
+                var prevR = graph.vertices[solution.points.lastKnown-1][1];
+                var lastX = calc(genetic.formula.main, solution.points.lastKnown);
+                var lastR = graph.vertices[solution.points.lastKnown][1];
+                var diffErr = ((lastX - prevX) - (lastR - prevR)) / solution.max / 1.5;
+                var lastErr = (lastX - lastR) / (solution.max / 10 + lastX + lastR) * 2;
+                var uncertainty = Math.pow((totalLength-observationLength)/(totalLength+observationLength), 2) / 2;
+                solution.error = { proportional: lastErr, integral: areaErr, diff: diffErr, uncertainty: uncertainty,
+                    model: Math.sqrt(Math.pow(areaErr, 2) + Math.pow(lastErr, 2) + Math.pow(diffErr, 2)),
+                };
+                solution.error.sigma = 0.1 + solution.error.model * Math.pow(solution.error.uncertainty, 3) * 350;
+                var k = model == 'gompertz' ? 2 : 2;
+                solution.error.range = 1 + solution.error.sigma * k;
+                if (!cache[currentSource][clicked][timeBackClip])
+                    cache[currentSource][clicked][timeBackClip] = {};
+                if (!cache[currentSource][clicked][timeBackClip][model])
+                    cache[currentSource][clicked][timeBackClip][model] = {};
+                cache[currentSource][clicked][timeBackClip][model][noise] = solution;
+                window.estimationInProgress = 0;
+                genetic.onFinished(solution);
             }
         };
 
@@ -776,7 +861,12 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             this.bound[3] += 50;
 
             this.vertices = [];
-            this.solutions = [];
+        }
+
+        Graph.prototype.drawLine = function (color, width, point) {
+                graph.drawFunction([0,0,0], color, width, function(a,b,c,x) { 
+                    if (x < point - graph.inc || x > point + graph.inc) return NaN;
+                    else return graph.ymax * (x < point); });
         }
 
         Graph.prototype.drawArray = function (a, color) {
@@ -790,15 +880,17 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             graph.loadVertices(ls);
         }
 
-        Graph.prototype.addLegend = function (title, data, alignLeft) {
+        Graph.prototype.addLegend = function (title, data, alignLeft, width) {
             var align = alignLeft ? 'left' : 'right';
             this.legend.html('<table style="position:absolute;' + align + ':0;bottom:0;margin:' + this.bound[0] + 'px 25px 70px ' + (this.bound[3] + 25) + 'px"><caption style=caption-side:top;text-align:' + align + '>' + title + '</caption><tr>' + data.map(function(d) {
-                var ln = '<div style="display:inline-block;border:solid 1px ' + d[0] + ';width:50px;height:0"></div>';
+                var width = d[3] || 1;
+                var ln = '<div style="display:inline-block;border:solid ' + width + 'px ' + d[0] + ';width:50px;height:0"></div>';
                 var txt = '<i title="' + d[2] + '" class="fas fa-question-circle text-secondary"></i>';
                 return '<td>' + (alignLeft ? [ln, d[1], txt] : [txt, d[1], ln]).join('</td><td>') + '</td>';
             }).join('</tr><tr>') + '</tr></table>').show();
             $('#legend i').tooltip();
         }
+
 
         Graph.prototype.drawFunction = function (coefficients, strokeStyle, lineWidth, fn) {
             var ctx = this.ctx;
@@ -811,16 +903,16 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             var ymax = this.ymax;
             var xstride = (bound[1] - bound[3]) / xmax;
             var ystride = (bound[2] - bound[0]) / ymax;
-            var inc = 1 / xstride;
+            graph.inc = 1 / xstride;
 
             ctx.lineWidth = lineWidth;
 
             ctx.beginPath();
             var x;
             var old;
-            for (x = 0; x < xmax; x += inc) {
+            for (x = 0; x < xmax; x += graph.inc) {
                 var cx = x * xstride + bound[3];
-                var cy = bound[2] - genetic.evaluate(coefficients, x, fn) * ystride;
+                var cy = bound[2] - genetic.bind(fn, coefficients)(x) * ystride;
 
                 if (x == 0) {
                     ctx.moveTo(cx, cy);
@@ -898,7 +990,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             ctx.restore();
         }
 
-        Graph.prototype.drawAxis = function(logScale) {
+        Graph.prototype.drawAxis = function(logScale, yDates) {
             var ctx = this.ctx;
             ctx.save();
             var bound = this.bound;
@@ -955,6 +1047,39 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         }
 
 
+        Graph.prototype.drawArea = function (fill, array) {
+            var ctx = this.ctx;
+            ctx.save();
+            var bound = this.bound;
+            var xmax = this.xmax;
+            var ymax = this.ymax;
+            var xstride = (bound[1] - bound[3]) / xmax;
+            var ystride = (bound[2] - bound[0]) / ymax;
+            var i;
+            ctx.fillStyle = fill || "#0080ff77";
+            ctx.lineWidth = 2;
+            // vertices
+            ctx.beginPath();
+            var cxx, cyy, x0;
+            array.map(function(p, i) {
+                var cx = (p[0] + (i >= array.length / 2) - 0.5) * xstride + bound[3];
+                var cy = bound[2] - p[1] * ystride;
+                if (!x0) {
+                    ctx.moveTo(cx,cy);
+                    x0 = cx;
+                } else  {
+                    ctx.lineTo(cx, cyy);
+                    ctx.lineTo(cx, cy);
+                    //ctx.quadraticCurveTo(cxx, cyy, (cx + cxx) / 2, (cy + cyy) / 2);
+                }
+                cxx = cx;
+                cyy = cy;
+            });
+            ctx.lineTo(x0, cyy);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+        };
 
         Graph.prototype.drawVertices = function (fill, stroke) {
 
@@ -989,7 +1114,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
 
     </script>
     <script type=text/javascript>
-        var gray = '#bbb', blue = '#00f', red = '#f00', green = '#28a745', violet = '#572f8355', yellow = '#ffc107', paleYellow = '#ffc10755';
+        var gray = '#bbb', blue = '#00f', red = '#f00', green = '#28a745', violet = '#572f8355', yellow = '#ffc107', paleYellow = '#ffc10755', rose = '#ff000033', black = '#000';
         window.cache = {};
         $.expr[":"].contains = $.expr.createPseudo(function (arg) {
             return function (elem) {
@@ -1202,7 +1327,8 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             }
         }
         graph.loadVertices = function(ls) {
-            graph.vertices = ls.map(function (c, i) { return [i, c]; });
+            graph.vertices = [];
+            ls.map(function (c, i) { graph.vertices.push([i, c]); });
         }
 
         var getFormerSolution = function(n) {
@@ -1256,7 +1382,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             var dataPoints = graph.vertices.reduce(function (a, b) { return a + (b[1] > 0); }, 0);
             $('#sum').number(known);
             if (known < 10 || dataPoints < 3)
-                return graph.refuse('Insufficient number of observations');
+                return graph.refuse('Insufficient number of confirmed cases');
             var ymax = graph.vertices.reduce(function (a, b) { return Math.max(a, b[1]); }, 0) * 2
             var scale = Math.floor(Math.log(ymax) / Math.log(10));
             var factor = Math.pow(10, scale);
@@ -1279,15 +1405,13 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             }
             else {
                 var config = { iterations: models[model].iterations, size: 250, crossover: 0.4, mutation: 1.0, skip: 10 };
-                var userData = { terms: 3, vertices: graph.vertices };
+                var userData = { terms: models[model].variables, vertices: graph.vertices };
                 $('h1')[0].scrollIntoView();
                 genetic.evolve(config, userData);
             }
         }
         var clickFn = function (el, k) {
             return function () {
-                if (window.estimationInProgress)
-                    return false;
                 $('#sample').hide();
                 genetic.onFinished = displayResults;
                 el.parent().find('.active').removeClass('active');
@@ -1403,6 +1527,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     adjust('Hubei, China', 23);
                     adjust('World', 22);
                     adjust('World', 23);
+                    adjust('France', 81);
                     setModel('genlog',1);
                     initiateUI();
                 }).fail(function () {
@@ -1423,12 +1548,9 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 });
         }
         function setModel(m, norun) {
+            $('#sample').hide();
             model = m;
-            $('#method .dropdown-toggle').html(m == 'gompertz'
-                ? 'e<sup>-e<sup>-t</sup></sup>'
-                : m == 'logistic' ? '<div style="border-bottom:solid 1px;text-align:center">e<sup>t</sup></div>1+e<sup>t</sup>'
-                : '<div style="border-bottom:solid 1px;text-align:center">1</div><sup>n</sup>&radic;<span style=text-decoration:overline>1+e<sup>-t</sup></span>')
-                .css(m != 'gompertz' ? {fontSize:'80%', padding:'0 1rem'}:{fontSize:'100%',padding:'0.5rem 1rem'});
+            $('#method .dropdown-toggle').html(models[m].html).css((m != 'gompertz' && m != 'custom') ? {fontSize:'80%', padding:'0 1rem'}:{fontSize:'100%',padding:'0.5rem 1rem'});
             genetic.formula=models[m].formula;
             genetic.seed=models[m].seed;
             genetic.scale=models[m].scale;
@@ -1436,6 +1558,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 estimate(clicked);
         }
         function setNoise(level) {
+            $('#sample').hide();
             var old = noise;
             noise = level;
             $('#noise .dropdown-toggle').html($('#noise .denoise-' + level + ' i:first')[0].outerHTML + ' ');
@@ -1443,7 +1566,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 var vars = window.solution && solution.variables;
                 estimate(clicked)
                 if (vars && old) {
-                    graph.addLegend('Noise reduction', [[gray, old, 'Regression with old noise reduction'],[yellow, level, 'Regression with current noise reduction']], solution.points.peak > graph.xmax / 2);
+                    graph.addLegend('Noise reduction', [[gray, old, 'Regression with previous noise reduction'],[yellow, level, 'Regression with selected noise reduction']], solution.points.peak > graph.xmax / 2);
                     graph.drawFunction(vars, gray, 3, genetic.formula.main);
                 }
             }
@@ -1494,55 +1617,106 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         var solutionValue = function (s, length) {
             return length == 1 ? s.today : length == 7 ? s.nextWeek : length == 30 ? s.nextMonth : s.total;
         }
+
+        var plotDuration = function() {
+            graph.draw();
+            graph.draw()
+            graph.ymax = window.yscale;
+            graph.loadVertices(cases[clicked]);
+            //graph.drawVertices('#ccc');
+            if (denoiseLevel[noise])
+                graph.denoiseVertices(denoiseLevel[noise])
+            graph.drawText(clicked);
+            graph.drawVertices('#000');
+            displayResults(solution);
+            graph.vertices = [], graph.peak = [], graph.start = [], graph.end = [];
+            cache[currentSource][clicked].map(function(models, i){
+                var s = models[model] && models[model][noise];
+                var dates = [s.points.start, s.points.peak, s.points.end];
+                graph.peak[i-1] = dates[1];
+                graph.start[i-1] = dates[0];
+                graph.end[i-1] = dates[2];
+                graph.vertices.push([i-1, dates[2]]);
+            });
+            graph.resize(false,true);
+            graph.ymax = 365;
+            graph.drawAxis(0);
+            var ix = function(x,i) { return [i, x]; };
+            var istart = function(x,i) { return [i, solution.points.start]; };
+            graph.drawArea(paleYellow, graph.start.map(istart).concat(graph.end.map(ix).reverse()));
+            graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return graph.end[Math.round(x)]? solution.points.current : NaN; });
+            var legend = [
+                    [paleYellow, 'Predicted duration', 'Estimated start to end range', 10],
+                    ['#ff9800', 'Predicted peak', 'Moment when new cases peak'],
+                ];
+            legend.push([red, 'Observed start', 'Historic start, according to data analysis', 1]);
+            //graph.drawLine(red, 1, solution.points.start);
+            graph.drawFunction([0,0,0], red, 1, function(a,b,c,x) { return graph.start[Math.round(x)]? solution.points.start: NaN; });
+            if (solution.points.peak < solution.points.current) {
+                legend.push([black, 'Observed peak', 'Historic peak, according to data analysis', 1]);
+                //graph.drawLine(black, 1, solution.points.peak);
+                graph.drawFunction([0,0,0], black, 1, function(a,b,c,x) { return graph.end[Math.round(x)]? solution.points.peak: NaN; });
+            }
+            legend.push([gray, 'Current date', 'Current moment', 2]);
+            graph.drawFunction([0,0,0], '#ff9800', 1, function(a,b,c,x) { return graph.peak[Math.round(x)]; });
+            //graph.drawFunction([0,0,0], yellow, 2, function(a,b,c,x) { return graph.end[Math.round(x)]; });
+            genetic.onFinished = displayResults;
+            graph.addLegend('Forecast: ' + (length ? (length + '-day') : 'overall') + '<br>Method: ' + model
+            + '<br>Noise reduction: ' + noise, legend, solution.points.peak > graph.xmax / 2);
+        }
         
         var plotTolerance = function (src, subj, length) {
             graph.draw()
             graph.ymax = window.yscale;
             graph.loadVertices(cases[subj]);
+            //graph.drawVertices('#ccc');
+            if (denoiseLevel[noise])
+                graph.denoiseVertices(denoiseLevel[noise])
             graph.drawText(subj);
             graph.drawVertices('#000');
             length = length || 0;
             displayResults(solution);
             var newCases = cases[clicked].map(function(x,i) { return [i, x]; });
-            graph.vertices = [], graph.upper = [], graph.lower = [], graph.middle = [];
+            //graph.accum = graph.accumulated(newCases).map(function(x,i) { return Math.log(x + 1); });
+            graph.accumN = graph.accumulated(newCases, length).map(function(x,i) { return Math.log(x + 1); });
+            graph.vertices = [], graph.exact = [], graph.upper = [], graph.lower = [], graph.upper1 = [], graph.lower1 = [], graph.middle = [];
             cache[src][subj].map(function(models, i){
                 var s = models[model] && models[model][noise];
-                if (s) {
-                    var x = solutionValue(s, length), up = Math.log(x * s.error.range + 1), low = Math.log(x / s.error.range + 1)
-                    graph.vertices.push([i-1, up]);
-                    graph.vertices.push([i-1, low]);
-                    graph.upper[i-1] = up;
-                    graph.lower[i-1] = low;
-                    graph.middle[i-1] = (up + low)/2;
+                if (s && graph.accumN[i + length - 1]) {
+                    var x = solutionValue(s, length), up1 = Math.log(x * s.error.range / 2 + 1), low1 = Math.log(x / s.error.range * 2 + 1),
+                        up2 = Math.log(x * s.error.range + 1), low2 = Math.log(x / s.error.range + 1)
+                    graph.vertices.push([i-1, up2]);
+                    graph.vertices.push([i-1, low2]);
+                    graph.upper[i-1] = up2;
+                    graph.lower[i-1] = low2;
+                    graph.upper1[i-1] = up1;
+                    graph.lower1[i-1] = low1;
+                    graph.middle[i-1] = (up2 + low2)/2;
+                    graph.exact[i-1] = Math.log(x + 1);
                 }
             });
-            graph.accum = graph.accumulated(newCases).map(function(x,i) { return Math.log(x + 1); });
-            graph.accumN = graph.accumulated(newCases, length).map(function(x,i) { return graph.upper[i - length] ? Math.log(x + 1) : NaN; });
             graph.resize(false,true);
+            graph.ymax = Math.min(14, graph.ymax);
             graph.drawAxis(1);
+            var ix = function(x,i) { return [i, x]; };
+            //graph.drawArea('#ff000033', graph.upper1.map(ix).concat(graph.lower1.map(ix).reverse()));
             var legend = [
-                    [red, 'P<sub>MAX</sub>', 'Upper boundary of predicted range'],
-                    [green, 'P<sub>MIN</sub>', 'Lower boundary of predicted range']
+                    [paleYellow, 'Predicted range', 'Range between upper and lower predicted values', 10],
                 ];
             if (length) {
-                legend.push([gray, 'Ground truth', 'Actual data that was recordered ' + length + ' days later']);
+                legend.push([gray, 'Ground truth', 'Data reported ' + length + ' days later', 2]);
                 graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return smooth(graph.accumN, x + length); });
             } else {
-                //legend.push([gray, 'Known', 'Known value at the moment of making prediction']);
-                //graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return smooth(graph.accum, x); });
-                legend.push([gray, 'Ground truth', 'Latest prediction mean based on entirety of observation (till this day)']);
+                legend.push([gray, 'Current prediction', 'Latest prediction mean based on entirety of observation (till this day)', 2]);
                 graph.drawFunction([0,0,0], gray, 4, function(a,b,c,x) { return Math.log(solutionValue(solution, length) + 1); });
             }
-            //if (model == 'gompertz') {
-                graph.drawFunction([0,0,0], red, 2, function(a,b,c,x) { return graph.upper[Math.round(x)]; });
-                graph.drawFunction([0,0,0], green, 2, function(a,b,c,x) { return graph.lower[Math.round(x)]; });
-            //} else
-            //    graph.kalman(0, Math.log(Math.exp(graph.ymax)+1), function (mu, sigma, kf) { 
-            //        kf.filter(mu); return [Math.log(kf.x), Math.log(kf.uncertainty()+1)*1.5];
-            //    });
+            graph.drawArea(paleYellow, graph.upper.map(ix).concat(graph.lower.map(ix).reverse()));
+            graph.drawFunction([0,0,0], red, 2, function(a,b,c,x) { return graph.upper[Math.round(x)]; });
+            graph.drawFunction([0,0,0], green, 2, function(a,b,c,x) { return graph.lower[Math.round(x)]; });
+            graph.drawFunction([0,0,0], yellow, 1, function(a,b,c,x) { return graph.exact[Math.round(x)]; });
             genetic.onFinished = displayResults;
             graph.addLegend('Forecast: ' + (length ? (length + '-day') : 'overall') + '<br>Method: ' + model
-            + '<br>Data optimization: ' + noise, legend, solution.points.peak > graph.xmax / 2);
+            + '<br>Noise reduction: ' + noise, legend, solution.points.peak > graph.xmax / 2);
         }
         graph.compareModels = function(len) {
             var models = {logistic:red,genlog:blue,gompertz:'#03a9f4'};
@@ -1578,6 +1752,24 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             }
             graph.addLegend('Compare models<br>Forecast: ' + (len ? (len + '-day') : 'overall'), legend, solution.points.peak > graph.xmax / 2);
         }
+        graph.findDistributionMean = function (ls) {
+            graph.loadVertices(ls);
+            graph.vertices=graph.vertices.map(function (x) { return [x[1],1]; });
+            graph.resize(1,1);
+            graph.draw();
+            graph.drawVertices();
+            var a=[], N = 300;
+            for (var i = 0; i < N; ++i)
+                a.push([graph.xmax/N*i, ls.reduce(function (a,b) {
+                    return a+=models.logistic.formula.main(graph.ymax/10000,15/graph.xmax,graph.xmax/N*i,b);
+                })]);
+            graph.vertices=a;
+            graph.resize(0,1);
+            graph.drawVertices(black,gray);
+            var best = graph.vertices.reduce(function (a,b) { return a[1] > b[1] ? a : b; },[0,0])
+            graph.drawLine(red, 2, best[0]);
+            return best[0];
+        }
         graph.kalman = function(R, Q, fn) {
             var kf = new KalmanFilter({R:R,Q:Q});
             graph.filtered = cache[currentSource][clicked].map(function(models) { 
@@ -1599,12 +1791,14 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             var a = ls[Math.floor(x)], b = ls[Math.ceil(x)], c = x-Math.floor(x);
             return a + c * (b - a);
         }
-        function loopDates(src, subj, fr, to, then) {
-            var start = moment();
+        function loopDates(src, subj, fr, to, then, cycles) {
             var seed = models[model].seed;
             var iters = models[model].iterations;
             $.LoadingOverlay('show', {progress: true, text:'Running earlier predictions...'});
             then = then || function () { plotTolerance(src, subj); }
+            var start = moment();
+            var speed0 = 0;
+            var damper = new KalmanFilter({R:0.1});
             function iter(n) { 
                 if (n >= (to || cases[subj].length)) {
                     genetic.onFinished = function(sol) {
@@ -1620,16 +1814,18 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 else {
                     genetic.onFinished = function() {
                         models[model].seed = solution.variables;
-                        models[model].iterations = 150;
+                        models[model].iterations = cycles;
                         iter(n+1);
                     }
-                    var complete = (n - fr) / (to - fr);
-                    var now = moment();
-                    var took = now - start;
-                    $.LoadingOverlay('progress', complete * 100);
-                    var remains = moment.duration(took / complete * (1 - complete));
-                    if (complete > 0)
-                        $.LoadingOverlay('text', 'About ' + remains.minutes() + ' Minutes ' + remains.seconds() + ' Seconds ' + 'remaining')
+                    var done = (n - fr) / (to - fr);
+                    $.LoadingOverlay('progress', done * 100);
+                    var now = moment(), took = now - start, speed = took / done, todo = 1 - done, accel = speed - speed0,
+                        avgSpeed = (speed + speed + accel * (to - n)) / 2, remains = avgSpeed * todo;
+                    if (done > 0 && took > 100) {
+                        var remains = moment.duration(damper.filter(remains));
+                        $.LoadingOverlay('text', 'About ' + (remains.minutes() ? (remains.minutes() + ' Minutes ') : '') + remains.seconds() + ' Seconds ' + 'remaining')
+                        speed0 = speed
+                    }
                     timeBackClip = n+1;
                     estimate(subj);
                     //location.hash='#'+[n+1,src,subj.replace(/ /g, '+')].join(';');
@@ -1643,9 +1839,10 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             while (sum < 3 && minPossible < end) {
                 sum += cases[clicked][++minPossible];
             }
-            var start = Math.max(minPossible, Math.floor(solution.points.start));
+            //var start = Math.max(minPossible, Math.floor(solution.points.start));
+            var start = minPossible;
             //end = start + 1;
-            loopDates(currentSource, clicked, start, end, then);
+            loopDates(currentSource, clicked, start, end, then, 150);
         }
         function sampleAll() {
             var start = $($('#menu a')[0]);
