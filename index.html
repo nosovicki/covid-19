@@ -171,17 +171,16 @@
             </p> <div class="collapse" id="more">
               <b>Abstract</b>
               <p>
-            Current program explores predictive properties of <span style=font-size:150%;font-family:seriff>e<sup>-e<sup>-t</sup></sup></span> type of functions. With that in mind, we apply our <a href="https://www.geogebra.org/graphing/svpu7zdd">model</a> to real-time COVID statistics. Using that model, we try to predict 1) total number of cases 2) when infection peaks 3) when it returns back to zero. 
-            <p>To assess prediction power, program offers retrospective analysis of predictions against later observed values.
+	      The project explores predictive properties of <span style=font-size:150%;font-family:seriff>&int;e<sup>f(x)-g(x)</sup></span> type of functions by applying them to real-time COVID statistics. The software fits a model to a time-series of daily confirmed cases and predicts 1) final number of cases in a wave 2) when the wave peaks 3) when it returns back to zero. 
+            <p>To assess prediction power, program offers retrospective analysis of predictions against observed values.
+            <p>Similarly, the program creates country-specific models by parameterizing <a href=https://www.geogebra.org/graphing/uj89yxhz>SIR-like model</a> to fit a particular dataset. This way user can extend given set of models with any number of custom ones.
             <p>
               <b>Implementation Details</b>
             <p>
-            <!--<a href="https://www.geogebra.org/graphing/sk8vnujk">logistic curve</a>-->
-            <!--<a href="https://www.geogebra.org/graphing/kajd5hra">Generalized logistic curve</a>-->
-                We model COVID-19 epidemic growth as <a href="https://en.wikipedia.org/wiki/Gompertz_function">Gompertz function</a>. Precisely, we fit its <a href="https://www.geogebra.org/graphing/svpu7zdd">derivative</a> to reported cases. We then try to extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. DAta is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a> and <a href="https://github.com/nytimes/covid-19-data">New York Times GitHub Data Repository</a>. 
+                We model COVID-19 growth as either <a href="https://www.geogebra.org/graphing/svpu7zdd">Gompertz function</a>, simple logistic <a href="https://www.geogebra.org/graphing/sk8vnujk">S-curve</a>, <a href="https://www.geogebra.org/graphing/kajd5hra">Generalized logistic curve</a>, or parameterized <a href=https://www.geogebra.org/graphing/uj89yxhz>SIR-like model</a>. In all cases, we fit the derivative to reported numbers and extrapolate beyond existing data. All processing happens on the client side. For curve fitting, we use <a href="https://github.com/subprotocol/genetic-js">genetic.js</a>. Data is being sourced from <a href="https://github.com/CSSEGISandData/COVID-19">Johns Hopkins CSSE GitHub Data Repository</a> and <a href="https://github.com/nytimes/covid-19-data">New York Times GitHub Data Repository</a>. 
             <p>
-              Current software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
-              Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of this project.
+              The software is released under <a href="https://github.com/nosovicki/covid-19/blob/master/LICENSE">MIT license</a>.
+              Your can contribute to the <a href="https://github.com/nosovicki/covid-19">source code</a> of the project.
             <p>
               <b>References</b>
             <p>
@@ -225,10 +224,9 @@
                   <a class="dropdown-item" onclick="setModel('logistic');return false" href="#">Standard logistic <i title="Produces misleading results as a rule" class="fas fa-question-circle"></i></a>
                   <a class="dropdown-item" onclick="setModel('genlog');return false" href="#">Generalized Logistic <i title="Best for aggregated geographic areas" class="fas fa-question-circle"></i></a>
                   <!--<a class="dropdown-item" onclick="setModel('genlog2');return false" href="#">Generalized Logistic 2 <i title="Best for aggregated geographic areas" class="fas fa-question-circle"></i></a>-->
-                  <a id=custom style=display:none;color:red class="dropdown-item" onclick="setModel('custom');return false" href="#">Custom <i title="User model" class="fas fa-question-circle"></i></a>
                   <div class="dropdown-divider"></div>
-                  <a class="dropdown-item text-primary" onclick="trainFrom(clicked);return false" href="#">Train a model <i title="Create a model that fits current data best" class="fas fa-question-circle"></i></a>
-                  <a class="dropdown-item text-primary" onclick="loadModel();return false" href="#">Load model <i title="Load custom model" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item text-primary" onclick="trainFrom2(clicked);return false" href="#">Generate country-specific model <i title="Create a model that fits current time series best" class="fas fa-question-circle"></i></a>
+                  <a class="dropdown-item text-primary" onclick="loadModel2();return false" href="#">Load model <i title="Load custom model" class="fas fa-question-circle"></i></a>
               </div>
           </div>
       </li>
@@ -421,6 +419,87 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         var denoiseLevel = { none: 0, slight: 1, full: 10, extra: 40 };
 
         var models = {
+            sir: {
+                variables:7,
+                seed:  function () { return [4, 0.6, -1.5, 3, 5600, 26, 80]; },
+                scale: [4, 0.6, -1.5, 3, 5600, 26, 80].map(function (x) {return Math.abs(x/3); }),
+                iterations:2500,
+                formula: {
+                    main: function (A, B, C, D, K, L, M, x) {
+                        return K*Math.exp(((x-M)/(L))*((B-A)/(Math.exp(-D*((x-M)/(L)-C))+1)+A-1));
+                    },
+                    integral: function (A, B, C, D, K, L, M, x) {
+                        var ar = [];
+                        for (i = 0; i <= x; ++i) {
+                            ar.push(models.sir.formula.main(A, B, C, D, K, L, M, x));
+                        }
+                        return ar.reduce(function(a,b){ return a+b; },0);
+                    },
+                    centerPoint:function (A, B, C, D, K, L, M) {
+                        var prev = -Infinity;
+                        for (let x = -100; x < 200; ++x) {
+                            var y = models.sir.formula.main(A, B, C, D, K, L, M, x);
+                            if (y < prev)
+                                return x - 1;
+                            prev = y;
+                        }
+                    },
+                    startPoint:function (A, B, C, D, K, L, M) {
+                        for (var x = models.sir.formula.centerPoint(A, B, C, D, K, L, M); x > -1000; --x)
+                            if (models.sir.formula.main(A, B, C, D, K, L, M, x) < 1)
+                                return x + 1;
+                        return NaN;
+                    },
+                    endPoint:function (A, B, C, D, K, L, M) {
+                        for (var x = models.sir.formula.centerPoint(A, B, C, D, K, L, M); x < 2000; ++x)
+                            if (models.sir.formula.main(A, B, C, D, K, L, M, x) < 1)
+                                return x - 1;
+                        return NaN;
+                    },
+                },
+                html: 'Trn',
+            },
+            sirTrained: {
+                variables:3,
+                //seed:  function () { return [5600, 26, 80]; },
+                //scale: models.sirTrained.seed().map(function (x) {return Math.abs(x/3); }),
+                iterations:500,
+                formula: {
+                    main: function (K, L, M, x) {
+                        var A=aval, B=bval, C=cval, D=dval; 
+                        return K*Math.exp(((x-M)/(L))*((B-A)/(Math.exp(-D*((x-M)/(L)-C))+1)+A-1));
+                    },
+                    integral: function (K, L, M, x) {
+                        var ar = [];
+                        for (i = 0; i <= x; ++i) {
+                            ar.push(models['mname'].formula.main(K, L, M, i));
+                        }
+                        return ar.reduce(function(a,b){ return a+b; },0);
+                    },
+                    centerPoint:function (K, L, M) {
+                        var prev = -Infinity;
+                        for (let x = -100; x < 200; ++x) {
+                            var y = models['mname'].formula.main(K, L, M, x);
+                            if (y < prev)
+                                return x - 1;
+                            prev = y;
+                        }
+                    },
+                    startPoint:function (K, L, M) {
+                        for (var x = models['mname'].formula.centerPoint(K, L, M); x > -1000; --x)
+                            if (models['mname'].formula.main(K, L, M, x) < 1)
+                                return x + 1;
+                        return NaN;
+                    },
+                    endPoint:function (K, L, M) {
+                        for (var x = models['mname'].formula.centerPoint(K, L, M); x < 2000; ++x)
+                            if (models['mname'].formula.main(K, L, M, x) < 1)
+                                return x - 1;
+                        return NaN;
+                    },
+                },
+                html: 'e<sup>f(x)-g(x)</sup>',
+            },
             gompertz : {
                 variables: 3,
                 formula : {
@@ -486,7 +565,15 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     for (var n in cache[src][subj])
                         delete cache[src][subj][n][modelName];
         }
-
+        var trainFrom2 = function (subj) {
+            $('.container').LoadingOverlay('show');
+            setModel('sir');
+            genetic.onFinished = function(sol) {
+                genetic.onFinished = displayResults;
+                $('.container').LoadingOverlay('hide');
+                loadModel2({name:subj,A:sol.variables[0],B:sol.variables[1],C:sol.variables[2],D:sol.variables[3]});
+            }
+        }
         var trainFrom = function (subj) {
             genetic.onFinished = function(sol) {
                 if (sol.points.peak >= sol.points.current) {
@@ -548,7 +635,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             swal({
                 title: 'Your model',
                 text: 'Press "Load". The model will appear under Models menu as "Custom"',
-                content: $('<textarea style=width:400px;height:66px onchange="swal.setActionValue($(this).val())">' + JSON.stringify(conf) + '</textarea>')[0],
+                content: $('<textarea style=width:400px;height:99px onchange="swal.setActionValue($(this).val())">' + JSON.stringify(conf) + '</textarea>')[0],
                 buttons: ['Cancel', 'Load'],
             }).then(function(json) {
                 if (!json) return
@@ -572,6 +659,54 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                     $('#custom').show();
                     deleteModelFromCache('custom');
                     setModel('custom');
+                } catch(e) {
+                    swal({ icon: 'error', title: e.message, text: 'Loading model failed' })
+                }
+            });
+        }
+
+        var loadModel2 = function (conf) {
+            conf = conf || window.customConf || {"A":3.586,"B":0.241,"C":-1.405,"D":3.2495,"name":"Custom model"};
+            var name = conf.name;
+            swal({
+                title: name + ' model',
+                text: 'Press "Load". The model will appear under Models menu as "' + name + '". You may want to copy and save configuration data in order to be able to load this model at will.',
+                content: $('<textarea style=width:400px;height:99px onchange="swal.setActionValue($(this).val())">' + JSON.stringify(conf) + '</textarea>')[0],
+                buttons: ['Cancel', 'Load'],
+            }).then(function(json) {
+                if (!json) return
+                try {
+                    json = JSON.parse(json);
+                    for (var k in json)
+                        conf[k] = json[k];
+                    window.customConf = conf;
+                    var seed = [solution.variables[4], solution.variables[5], solution.variables[6]];
+                    var model = {
+                        variables: 3,
+                        seed:  new Function([], 'return ' + JSON.stringify(seed) + ';'),
+                        scale: seed.map(function (x) { return x / 3; }),
+                        iterations: 500,
+                        html: name,
+                        formula: {},
+                    };
+                    for (var k in models.sirTrained.formula)
+                        model.formula[k] = new Function(['K','L','M','x'], models.sirTrained.formula[k].toString().match(/function[^{]+\{([\s\S]*)\}$/)[1]
+                            .replace('aval', conf.A)
+                            .replace('bval', conf.B)
+                            .replace('cval', conf.C)
+                            .replace('dval', conf.D)
+                            .replace(/mname/g, name));
+                    models[name] = model;
+                    $('#method a').filter(function () { return $(this).text() == clicked + ' '; }).remove();
+                    $('<a style=color:red class="dropdown-item" href="#">' + name +' <i title="User model" class="fas fa-question-circle"></i></a>')
+                        .insertBefore('#method .dropdown-divider')
+                        .on('click', function () {
+                            setModel(name);
+                            $(this).closest(".dropdown-menu").prev().dropdown("toggle");
+                            return false;
+                        });
+                    deleteModelFromCache(name);
+                    setModel(name);
                 } catch(e) {
                     swal({ icon: 'error', title: e.message, text: 'Loading model failed' })
                 }
@@ -824,7 +959,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
             $('#sigma').number(solution.error.sigma, '0.0');
             $('#sigma-rank').html(solution.error.sigma <= 0.2 ? '<span class="badge badge-success">LOW <i title="Prediction has high confidence" class="fas fa-question-circle text-white"></i></span>' : solution.error.sigma < 2.5 ? '<span class="badge badge-success">AVG <i title="Prediction is inconclusive due to lack of observation" class="fas fa-question-circle text-white"></i></span>' : '<span class="badge badge-danger">HIGH <i title="Prediction is highly speculative" class="fas fa-question-circle text-white"></i></span>');
             $('#figures').show();
-            var lineWidth = 3, strokeStyle = yellow;
+            var lineWidth = 2, strokeStyle = yellow;
             graph.drawFunction(solution.variables, strokeStyle, lineWidth, genetic.formula.main);
             $('.fa-question-circle').tooltip();
             $('#sample')[known > 150 ? 'show' : 'hide']();
@@ -1550,7 +1685,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         function setModel(m, norun) {
             $('#sample').hide();
             model = m;
-            $('#method .dropdown-toggle').html(models[m].html).css((m != 'gompertz' && m != 'custom') ? {fontSize:'80%', padding:'0 1rem'}:{fontSize:'100%',padding:'0.5rem 1rem'});
+            $('#method .dropdown-toggle').html(models[m].html).css((m == 'logistic' || m == 'genlog') ? {fontSize:'80%', padding:'0 1rem'}:{fontSize:'100%',padding:'0.5rem 1rem'});
             genetic.formula=models[m].formula;
             genetic.seed=models[m].seed;
             genetic.scale=models[m].scale;
@@ -1567,7 +1702,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
                 estimate(clicked)
                 if (vars && old) {
                     graph.addLegend('Noise reduction', [[gray, old, 'Regression with previous noise reduction'],[yellow, level, 'Regression with selected noise reduction']], solution.points.peak > graph.xmax / 2);
-                    graph.drawFunction(vars, gray, 3, genetic.formula.main);
+                    graph.drawFunction(vars, gray, 2, genetic.formula.main);
                 }
             }
         }
@@ -1793,6 +1928,7 @@ $.LoadingOverlaySetup({textColor: '#b3b3b3', imageColor: '#ccc', progressColor:'
         }
         function loopDates(src, subj, fr, to, then, cycles) {
             var seed = models[model].seed;
+            solution.variables = models[model].seed;
             var iters = models[model].iterations;
             $.LoadingOverlay('show', {progress: true, text:'Running earlier predictions...'});
             then = then || function () { plotTolerance(src, subj); }
